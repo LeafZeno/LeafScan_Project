@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Plant Details</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-slate-900 text-white px-6 py-10">
+
+  <div class="max-w-5xl mx-auto py-10 px-4">
+    <!-- Header -->
+    <div class="mb-6">
+      <button
+        onclick="window.location.href='index.html'"
+        class="text-white bg-slate-800 py-2 w-40 rounded-lg hover:bg-slate-700 font-semibold"
+      >
+        Back
+      </button>
+    </div>
+
+    <!-- Main Card -->
+    <div class="bg-slate-800 rounded-2xl shadow-xl overflow-hidden">
+      <!-- Top Section -->
+      <div class="p-8 border-b">
+        <h1 id="plantName" class="text-4xl font-extrabold text-white"></h1>
+        <p id="plantDescription"
+           class="mt-4 text-white text-lg leading-relaxed max-w-3xl">
+        </p>
+      </div>
+
+      <!-- Gallery -->
+      <div class="p-8">
+        <h2 class="text-xl font-semibold text-white mb-4">
+          Reference Images
+        </h2>
+
+        <div id="gallery"
+             class="grid grid-cols-2 md:grid-cols-3 gap-6">
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <p class="text-sm text-gray-500 mt-6 text-center">
+      Images are sample references for educational purposes only.
+    </p>
+  </div>
+
+  <script src="plant_data.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const plant = params.get("name");
+
+    const nameEl = document.getElementById("plantName");
+    const descEl = document.getElementById("plantDescription");
+    const galleryEl = document.getElementById("gallery");
+
+    if (plant && plantData[plant]) {
+      nameEl.textContent = plant;
+      descEl.textContent = plantData[plant].description;
+
+      plantData[plant].images.forEach(src => {
+        const card = document.createElement("div");
+        card.className =
+          "rounded-xl overflow-hidden shadow hover:shadow-lg transition";
+
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = plant;
+        img.className =
+          "w-full h-56 object-cover hover:scale-105 transition-transform duration-300";
+
+        card.appendChild(img);
+        galleryEl.appendChild(card);
+      });
+    } else {
+      nameEl.textContent = "Unknown Plant";
+      descEl.textContent = "No information available.";
+    }
+  </script>
+
+</body>
+</html>

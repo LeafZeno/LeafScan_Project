@@ -1,0 +1,21 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Dataset (DO NOT COMMIT)
+Dataset/
+
+# Trained model (large binary file)
+models/*.h5
+
+# OS files
+.DS_Store
+Thumbs.db
