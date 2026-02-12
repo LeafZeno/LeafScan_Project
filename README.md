@@ -76,7 +76,7 @@ LeafScan/
 1. Clone repository
 
 ```
-git clone <repository-url>
+git clone https://github.com/LeafZeno/LeafScan_Project.git
 cd LeafScan
 ```
 
