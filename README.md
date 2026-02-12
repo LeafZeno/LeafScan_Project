@@ -101,13 +101,13 @@ source venv/bin/activate
 3. Install dependencies
 
 ```
+cd api
 pip install -r requirements.txt
 ```
 
 4. Run backend
 
 ```
-cd api
 python app.py
 ```
 
