@@ -13,8 +13,6 @@ venv/
 # Dataset (DO NOT COMMIT)
 Dataset/
 
-# Trained model (large binary file)
-models/*.h5
 
 # OS files
 .DS_Store
