@@ -77,7 +77,7 @@ LeafScan/
 
 ```
 git clone https://github.com/LeafZeno/LeafScan_Project.git
-cd LeafScan
+cd LeafScan_Project
 ```
 
 2. Create virtual environment
