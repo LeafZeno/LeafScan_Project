@@ -111,12 +111,6 @@ cd api
 python app.py
 ```
 
-Server runs at
-
-```
-http://127.0.0.1:5000
-```
-
 5. Open frontend
 
 ```
