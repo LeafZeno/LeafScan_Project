@@ -1,0 +1,1054 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>LeafScan Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../supabase.js"></script>
+  </head>
+  <body class="bg-slate-950 text-white min-h-screen">
+    <div class="flex h-screen overflow-hidden">
+      <!-- Sidebar -->
+      <aside
+        class="w-72 h-screen sticky top-0 bg-slate-900 border-r border-slate-800 p-6 flex flex-col shrink-0"
+      >
+        <a href="../index.html" class="text-3xl font-bold text-green-400 mb-8">
+          LeafScan
+        </a>
+
+        <nav class="space-y-3">
+          <button
+            class="nav-btn w-full text-left px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700"
+            data-section="dashboardSection"
+          >
+            Dashboard
+          </button>
+          <button
+            class="nav-btn w-full text-left px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700"
+            data-section="plantsSection"
+          >
+            Manage Plants
+          </button>
+          <button
+            class="nav-btn w-full text-left px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700"
+            data-section="categoriesSection"
+          >
+            Manage Categories
+          </button>
+        </nav>
+
+        <div class="mt-auto pt-8">
+          <a
+            href="../index.html"
+            class="block w-full text-center px-4 py-3 rounded-xl bg-green-600 hover:bg-green-700"
+          >
+            Back to Website
+          </a>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <main class="flex-1 p-8 overflow-y-auto h-screen">
+        <div id="statusMessage" class="hidden mb-6 px-4 py-3 rounded-xl"></div>
+
+        <!-- Dashboard Section -->
+        <section id="dashboardSection" class="section">
+          <div class="flex items-center justify-between mb-8">
+            <div>
+              <h1 class="text-4xl font-bold">Admin Dashboard</h1>
+              <p class="text-slate-400 mt-2">
+                Overview of your LeafScan project
+              </p>
+            </div>
+
+            <button
+              onclick="loadDashboardStats()"
+              class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700"
+            >
+              Refresh Stats
+            </button>
+          </div>
+
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-10"
+          >
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <p class="text-slate-400 mb-2">Total Users</p>
+              <h2 id="statUsers" class="text-4xl font-bold">0</h2>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <p class="text-slate-400 mb-2">Total Plants</p>
+              <h2 id="statPlants" class="text-4xl font-bold">0</h2>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <p class="text-slate-400 mb-2">Total Categories</p>
+              <h2 id="statCategories" class="text-4xl font-bold">0</h2>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <p class="text-slate-400 mb-2">Total Plant Images</p>
+              <h2 id="statPlantImages" class="text-4xl font-bold">0</h2>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <p class="text-slate-400 mb-2">Active Plants</p>
+              <h2 id="statActivePlants" class="text-4xl font-bold">0</h2>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <p class="text-slate-400 mb-2">Inactive Plants</p>
+              <h2 id="statInactivePlants" class="text-4xl font-bold">0</h2>
+            </div>
+          </div>
+
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+            <h3 class="text-2xl font-bold mb-3">Admin Notes</h3>
+            <p class="text-slate-300 leading-8">
+              Use the sidebar to manage plants and categories. In the plant
+              form, you can upload a main image and multiple gallery images
+              directly to Supabase Storage without manually copying URLs
+              anymore.
+            </p>
+          </div>
+        </section>
+
+        <!-- Plants Section -->
+        <section id="plantsSection" class="section hidden">
+          <div class="flex flex-col lg:flex-row lg:items-start gap-8">
+            <!-- Plant Form -->
+            <div
+              class="lg:w-[420px] bg-slate-900 border border-slate-800 rounded-2xl p-6 h-fit"
+            >
+              <div class="flex items-center justify-between mb-5">
+                <h2 id="plantFormTitle" class="text-2xl font-bold">
+                  Add Plant
+                </h2>
+                <button
+                  type="button"
+                  onclick="resetPlantForm()"
+                  class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm"
+                >
+                  Reset
+                </button>
+              </div>
+
+              <form id="plantForm" class="space-y-4">
+                <input type="hidden" id="plantId" />
+
+                <div>
+                  <label class="block mb-2 text-sm text-slate-300">Name</label>
+                  <input
+                    id="plantName"
+                    type="text"
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label class="block mb-2 text-sm text-slate-300"
+                    >Model Label</label
+                  >
+                  <input
+                    id="plantModelLabel"
+                    type="text"
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label class="block mb-2 text-sm text-slate-300"
+                    >Scientific Name</label
+                  >
+                  <input
+                    id="plantScientificName"
+                    type="text"
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3"
+                  />
+                </div>
+
+                <div>
+                  <label class="block mb-2 text-sm text-slate-300"
+                    >Category</label
+                  >
+                  <select
+                    id="plantCategory"
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3"
+                  >
+                    <option value="">Select category</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block mb-2 text-sm text-slate-300"
+                    >Description</label
+                  >
+                  <textarea
+                    id="plantDescription"
+                    rows="5"
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3"
+                  ></textarea>
+                </div>
+
+                <div>
+                  <label class="block mb-2 text-sm text-slate-300"
+                    >Care Instructions</label
+                  >
+                  <textarea
+                    id="plantCareInstructions"
+                    rows="6"
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3"
+                    placeholder="Example:
+Light: Bright indirect light
+
+Water: Keep soil slightly moist
+
+Humidity: High humidity preferred"
+                  ></textarea>
+                </div>
+
+                <div>
+                  <label class="block mb-2 text-sm text-slate-300"
+                    >Main Image</label
+                  >
+                  <input
+                    id="plantMainImage"
+                    type="file"
+                    accept="image/*"
+                    class="hidden"
+                    onchange="
+                      updateFileName('plantMainImage', 'mainImageFileName')
+                    "
+                  />
+                  <label
+                    for="plantMainImage"
+                    class="flex items-center justify-between gap-3 w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 cursor-pointer hover:bg-slate-700"
+                  >
+                    <span
+                      class="px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm"
+                    >
+                      Choose File
+                    </span>
+                    <span
+                      id="mainImageFileName"
+                      class="text-slate-300 text-sm truncate"
+                    >
+                      No File Chosen
+                    </span>
+                  </label>
+                </div>
+
+                <div>
+                  <label class="block mb-2 text-sm text-slate-300"
+                    >Gallery Images</label
+                  >
+                  <input
+                    id="plantGalleryImages"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    class="hidden"
+                    onchange="updateGalleryFileName()"
+                  />
+                  <label
+                    for="plantGalleryImages"
+                    class="flex items-center justify-between gap-3 w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 cursor-pointer hover:bg-slate-700"
+                  >
+                    <span
+                      class="px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm"
+                    >
+                      Choose Files
+                    </span>
+                    <span
+                      id="galleryImageFileName"
+                      class="text-slate-300 text-sm truncate"
+                    >
+                      No files chosen
+                    </span>
+                  </label>
+                </div>
+
+                <div class="flex items-center gap-3">
+                  <input
+                    id="plantIsActive"
+                    type="checkbox"
+                    class="w-5 h-5"
+                    checked
+                  />
+                  <label for="plantIsActive" class="text-sm text-slate-300"
+                    >Active plant</label
+                  >
+                </div>
+
+                <button
+                  type="submit"
+                  class="w-full px-4 py-3 rounded-xl bg-green-600 hover:bg-green-700 font-medium"
+                >
+                  Save Plant
+                </button>
+              </form>
+            </div>
+
+            <!-- Plant List -->
+            <div class="flex-1">
+              <div
+                class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5"
+              >
+                <div>
+                  <h2 class="text-3xl font-bold">Plants</h2>
+                  <p class="text-slate-400 mt-1">
+                    Create, edit, delete, and upload images
+                  </p>
+                </div>
+
+                <input
+                  id="plantSearch"
+                  type="text"
+                  placeholder="Search plants..."
+                  class="w-full md:w-80 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3"
+                />
+              </div>
+
+              <div
+                class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden"
+              >
+                <div class="overflow-x-auto">
+                  <table class="w-full">
+                    <thead class="bg-slate-800/70">
+                      <tr class="text-left">
+                        <th class="px-4 py-4">Image</th>
+                        <th class="px-4 py-4">Name</th>
+                        <th class="px-4 py-4">Model Label</th>
+                        <th class="px-4 py-4">Category</th>
+                        <th class="px-4 py-4">Status</th>
+                        <th class="px-4 py-4">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="plantsTableBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Categories Section -->
+        <section id="categoriesSection" class="section hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-8">
+            <!-- Category Form -->
+            <div
+              class="bg-slate-900 border border-slate-800 rounded-2xl p-6 h-fit"
+            >
+              <div class="flex items-center justify-between mb-5">
+                <h2 id="categoryFormTitle" class="text-2xl font-bold">
+                  Add Category
+                </h2>
+                <button
+                  type="button"
+                  onclick="resetCategoryForm()"
+                  class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm"
+                >
+                  Reset
+                </button>
+              </div>
+
+              <form id="categoryForm" class="space-y-4">
+                <input type="hidden" id="categoryId" />
+
+                <div>
+                  <label class="block mb-2 text-sm text-slate-300"
+                    >Category Name</label
+                  >
+                  <input
+                    id="categoryName"
+                    type="text"
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3"
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  class="w-full px-4 py-3 rounded-xl bg-green-600 hover:bg-green-700 font-medium"
+                >
+                  Save Category
+                </button>
+              </form>
+            </div>
+
+            <!-- Category List -->
+            <div>
+              <div class="flex items-center justify-between mb-5">
+                <div>
+                  <h2 class="text-3xl font-bold">Categories</h2>
+                  <p class="text-slate-400 mt-1">Manage plant categories</p>
+                </div>
+              </div>
+
+              <div
+                class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden"
+              >
+                <div class="overflow-x-auto">
+                  <table class="w-full">
+                    <thead class="bg-slate-800/70">
+                      <tr class="text-left">
+                        <th class="px-4 py-4">ID</th>
+                        <th class="px-4 py-4">Name</th>
+                        <th class="px-4 py-4">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="categoriesTableBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const BUCKET_NAME = "plant-images";
+
+      const sections = document.querySelectorAll(".section");
+      const navButtons = document.querySelectorAll(".nav-btn");
+      const statusMessage = document.getElementById("statusMessage");
+
+      const statUsers = document.getElementById("statUsers");
+      const statPlants = document.getElementById("statPlants");
+      const statCategories = document.getElementById("statCategories");
+      const statPlantImages = document.getElementById("statPlantImages");
+      const statActivePlants = document.getElementById("statActivePlants");
+      const statInactivePlants = document.getElementById("statInactivePlants");
+
+      const categoryForm = document.getElementById("categoryForm");
+      const categoryIdInput = document.getElementById("categoryId");
+      const categoryNameInput = document.getElementById("categoryName");
+      const categoryFormTitle = document.getElementById("categoryFormTitle");
+      const categoriesTableBody = document.getElementById(
+        "categoriesTableBody",
+      );
+
+      const plantForm = document.getElementById("plantForm");
+      const plantIdInput = document.getElementById("plantId");
+      const plantNameInput = document.getElementById("plantName");
+      const plantModelLabelInput = document.getElementById("plantModelLabel");
+      const plantScientificNameInput = document.getElementById(
+        "plantScientificName",
+      );
+      const plantCategoryInput = document.getElementById("plantCategory");
+      const plantDescriptionInput = document.getElementById("plantDescription");
+      const plantCareInstructionsInput = document.getElementById(
+        "plantCareInstructions",
+      );
+      const plantMainImageInput = document.getElementById("plantMainImage");
+      const plantGalleryImagesInput =
+        document.getElementById("plantGalleryImages");
+      const plantIsActiveInput = document.getElementById("plantIsActive");
+      const plantFormTitle = document.getElementById("plantFormTitle");
+      const plantsTableBody = document.getElementById("plantsTableBody");
+      const plantSearchInput = document.getElementById("plantSearch");
+
+      let categories = [];
+      let plants = [];
+
+      function showStatus(message, type = "success") {
+        statusMessage.textContent = message;
+        statusMessage.classList.remove(
+          "hidden",
+          "bg-green-600/20",
+          "text-green-300",
+          "border-green-500/30",
+          "bg-red-600/20",
+          "text-red-300",
+          "border-red-500/30",
+        );
+        statusMessage.classList.add("border");
+
+        if (type === "error") {
+          statusMessage.classList.add(
+            "bg-red-600/20",
+            "text-red-300",
+            "border-red-500/30",
+          );
+        } else {
+          statusMessage.classList.add(
+            "bg-green-600/20",
+            "text-green-300",
+            "border-green-500/30",
+          );
+        }
+
+        setTimeout(() => {
+          statusMessage.classList.add("hidden");
+        }, 3000);
+      }
+
+      function showSection(sectionId) {
+        sections.forEach((section) => section.classList.add("hidden"));
+        document.getElementById(sectionId).classList.remove("hidden");
+      }
+
+      navButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          showSection(btn.dataset.section);
+        });
+      });
+
+      function getSafeFileName(fileName) {
+        return fileName.replace(/\s+/g, "-").replace(/[^\w.\-]/g, "");
+      }
+
+      async function uploadFileToStorage(file, folder = "misc") {
+        const safeName = getSafeFileName(file.name);
+        const filePath = `${folder}/${Date.now()}-${safeName}`;
+
+        const { error } = await supabaseClient.storage
+          .from(BUCKET_NAME)
+          .upload(filePath, file);
+
+        if (error) throw error;
+
+        const { data } = supabaseClient.storage
+          .from(BUCKET_NAME)
+          .getPublicUrl(filePath);
+
+        return data.publicUrl;
+      }
+
+      async function loadDashboardStats() {
+        const { count: usersCount } = await supabaseClient
+          .from("profiles")
+          .select("*", { count: "exact", head: true });
+
+        const { count: plantsCount } = await supabaseClient
+          .from("plants")
+          .select("*", { count: "exact", head: true });
+
+        const { count: categoriesCount } = await supabaseClient
+          .from("categories")
+          .select("*", { count: "exact", head: true });
+
+        const { count: plantImagesCount } = await supabaseClient
+          .from("plant_images")
+          .select("*", { count: "exact", head: true });
+
+        const { count: activePlantsCount } = await supabaseClient
+          .from("plants")
+          .select("*", { count: "exact", head: true })
+          .eq("is_active", true);
+
+        const { count: inactivePlantsCount } = await supabaseClient
+          .from("plants")
+          .select("*", { count: "exact", head: true })
+          .eq("is_active", false);
+
+        statUsers.textContent = usersCount || 0;
+        statPlants.textContent = plantsCount || 0;
+        statCategories.textContent = categoriesCount || 0;
+        statPlantImages.textContent = plantImagesCount || 0;
+        statActivePlants.textContent = activePlantsCount || 0;
+        statInactivePlants.textContent = inactivePlantsCount || 0;
+      }
+
+      async function loadCategories() {
+        const { data, error } = await supabaseClient
+          .from("categories")
+          .select("*")
+          .order("id", { ascending: true });
+
+        if (error) {
+          console.log(error);
+          showStatus("Failed to load categories.", "error");
+          return;
+        }
+
+        categories = data || [];
+        renderCategoriesTable();
+        populateCategoryDropdown();
+      }
+
+      function renderCategoriesTable() {
+        categoriesTableBody.innerHTML = "";
+
+        if (!categories.length) {
+          categoriesTableBody.innerHTML = `
+          <tr>
+            <td colspan="3" class="px-4 py-6 text-slate-400">No categories found.</td>
+          </tr>
+        `;
+          return;
+        }
+
+        categories.forEach((category) => {
+          const tr = document.createElement("tr");
+          tr.className = "border-t border-slate-800";
+
+          tr.innerHTML = `
+          <td class="px-4 py-4">${category.id}</td>
+          <td class="px-4 py-4">${category.name}</td>
+          <td class="px-4 py-4">
+            <div class="flex gap-2">
+              <button
+                class="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-sm"
+                onclick="editCategory(${category.id})"
+              >
+                Edit
+              </button>
+              <button
+                class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-sm"
+                onclick="deleteCategory(${category.id})"
+              >
+                Delete
+              </button>
+            </div>
+          </td>
+        `;
+
+          categoriesTableBody.appendChild(tr);
+        });
+      }
+
+      function populateCategoryDropdown() {
+        plantCategoryInput.innerHTML = `<option value="">Select category</option>`;
+
+        categories.forEach((category) => {
+          const option = document.createElement("option");
+          option.value = category.id;
+          option.textContent = category.name;
+          plantCategoryInput.appendChild(option);
+        });
+      }
+
+      function resetCategoryForm() {
+        categoryIdInput.value = "";
+        categoryNameInput.value = "";
+        categoryFormTitle.textContent = "Add Category";
+      }
+
+      function editCategory(id) {
+        const category = categories.find((c) => c.id === id);
+        if (!category) return;
+
+        categoryIdInput.value = category.id;
+        categoryNameInput.value = category.name;
+        categoryFormTitle.textContent = "Edit Category";
+        showSection("categoriesSection");
+      }
+
+      async function deleteCategory(id) {
+        const usedByPlant = plants.some((p) => p.category_id === id);
+        if (usedByPlant) {
+          showStatus(
+            "Cannot delete category because some plants still use it.",
+            "error",
+          );
+          return;
+        }
+
+        if (!confirm("Delete this category?")) return;
+
+        const { error } = await supabaseClient
+          .from("categories")
+          .delete()
+          .eq("id", id);
+
+        if (error) {
+          console.log(error);
+          showStatus("Failed to delete category.", "error");
+          return;
+        }
+
+        showStatus("Category deleted.");
+        await loadCategories();
+        await loadDashboardStats();
+      }
+
+      categoryForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const id = categoryIdInput.value;
+        const name = categoryNameInput.value.trim();
+
+        if (!name) {
+          showStatus("Category name is required.", "error");
+          return;
+        }
+
+        if (id) {
+          const { error } = await supabaseClient
+            .from("categories")
+            .update({ name })
+            .eq("id", id);
+
+          if (error) {
+            console.log(error);
+            showStatus("Failed to update category.", "error");
+            return;
+          }
+
+          showStatus("Category updated.");
+        } else {
+          const { error } = await supabaseClient
+            .from("categories")
+            .insert({ name });
+
+          if (error) {
+            console.log(error);
+            showStatus("Failed to create category.", "error");
+            return;
+          }
+
+          showStatus("Category created.");
+        }
+
+        resetCategoryForm();
+        await loadCategories();
+        await loadDashboardStats();
+      });
+
+      async function loadPlants() {
+        const { data, error } = await supabaseClient
+          .from("plants")
+          .select("*")
+          .order("id", { ascending: true });
+
+        if (error) {
+          console.log(error);
+          showStatus("Failed to load plants.", "error");
+          return;
+        }
+
+        plants = data || [];
+        renderPlantsTable(plants);
+      }
+
+      function getCategoryName(categoryId) {
+        const category = categories.find((c) => c.id === categoryId);
+        return category ? category.name : "Uncategorized";
+      }
+
+      function renderPlantsTable(plantList) {
+        plantsTableBody.innerHTML = "";
+
+        if (!plantList.length) {
+          plantsTableBody.innerHTML = `
+          <tr>
+            <td colspan="6" class="px-4 py-6 text-slate-400">No plants found.</td>
+          </tr>
+        `;
+          return;
+        }
+
+        plantList.forEach((plant) => {
+          const tr = document.createElement("tr");
+          tr.className = "border-t border-slate-800";
+
+          tr.innerHTML = `
+          <td class="px-4 py-4">
+            <img
+              src="${plant.image_url || ""}"
+              alt="${plant.name || "Plant"}"
+              class="w-16 h-16 object-cover rounded-xl bg-slate-800"
+            />
+          </td>
+          <td class="px-4 py-4">${plant.name || ""}</td>
+          <td class="px-4 py-4">${plant.model_label || ""}</td>
+          <td class="px-4 py-4">${getCategoryName(plant.category_id)}</td>
+          <td class="px-4 py-4">
+            <span class="px-3 py-1 rounded-full text-sm ${plant.is_active ? "bg-green-600/20 text-green-300 border border-green-500/30" : "bg-red-600/20 text-red-300 border border-red-500/30"}">
+              ${plant.is_active ? "Active" : "Inactive"}
+            </span>
+          </td>
+          <td class="px-4 py-4">
+            <div class="flex gap-2">
+              <button
+                class="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-sm"
+                onclick="editPlant(${plant.id})"
+              >
+                Edit
+              </button>
+              <button
+                class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-sm"
+                onclick="deletePlant(${plant.id})"
+              >
+                Delete
+              </button>
+            </div>
+          </td>
+        `;
+
+          plantsTableBody.appendChild(tr);
+        });
+      }
+
+      function resetPlantForm() {
+        plantIdInput.value = "";
+        plantNameInput.value = "";
+        plantModelLabelInput.value = "";
+        plantScientificNameInput.value = "";
+        plantCategoryInput.value = "";
+        plantDescriptionInput.value = "";
+        plantCareInstructionsInput.value = "";
+        plantMainImageInput.value = "";
+        plantGalleryImagesInput.value = "";
+        plantIsActiveInput.checked = true;
+        plantFormTitle.textContent = "Add Plant";
+
+        document.getElementById("mainImageFileName").textContent =
+          "No file chosen";
+        document.getElementById("galleryImageFileName").textContent =
+          "No file chosen";
+      }
+
+      function editPlant(id) {
+        const plant = plants.find((p) => p.id === id);
+        if (!plant) return;
+
+        plantIdInput.value = plant.id;
+        plantNameInput.value = plant.name || "";
+        plantModelLabelInput.value = plant.model_label || "";
+        plantScientificNameInput.value = plant.scientific_name || "";
+        plantCategoryInput.value = plant.category_id || "";
+        plantDescriptionInput.value = plant.description || "";
+        plantCareInstructionsInput.value = plant.care_instructions || "";
+        plantIsActiveInput.checked = !!plant.is_active;
+        plantMainImageInput.value = "";
+        plantGalleryImagesInput.value = "";
+        plantFormTitle.textContent = "Edit Plant";
+        showSection("plantsSection");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      async function deletePlant(id) {
+        if (
+          !confirm(
+            "Delete this plant? This will also delete its gallery rows from plant_images.",
+          )
+        )
+          return;
+
+        const { error } = await supabaseClient
+          .from("plants")
+          .delete()
+          .eq("id", id);
+
+        if (error) {
+          console.log(error);
+          showStatus("Failed to delete plant.", "error");
+          return;
+        }
+
+        showStatus("Plant deleted.");
+        await loadPlants();
+        await loadDashboardStats();
+      }
+
+      async function insertPlantGalleryImages(plantId, files, folderBase) {
+        if (!files || !files.length) return;
+
+        const rows = [];
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const imageUrl = await uploadFileToStorage(
+            file,
+            `${folderBase}/gallery`,
+          );
+
+          rows.push({
+            plant_id: plantId,
+            image_url: imageUrl,
+            sort_order: i + 1,
+          });
+        }
+
+        const { error } = await supabaseClient
+          .from("plant_images")
+          .insert(rows);
+
+        if (error) throw error;
+      }
+
+      async function replacePlantGalleryImages(plantId, files, folderBase) {
+        if (!files || !files.length) return;
+
+        const { error: deleteError } = await supabaseClient
+          .from("plant_images")
+          .delete()
+          .eq("plant_id", plantId);
+
+        if (deleteError) throw deleteError;
+
+        await insertPlantGalleryImages(plantId, files, folderBase);
+      }
+
+      plantForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const id = plantIdInput.value;
+        const name = plantNameInput.value.trim();
+        const model_label = plantModelLabelInput.value.trim();
+        const scientific_name = plantScientificNameInput.value.trim();
+        const category_id = plantCategoryInput.value
+          ? Number(plantCategoryInput.value)
+          : null;
+        const description = plantDescriptionInput.value.trim();
+        const care_instructions = plantCareInstructionsInput.value.trim();
+        const is_active = plantIsActiveInput.checked;
+
+        if (!name || !model_label) {
+          showStatus("Name and model label are required.", "error");
+          return;
+        }
+
+        try {
+          let image_url = null;
+          const mainImageFile = plantMainImageInput.files[0];
+          const galleryFiles = Array.from(plantGalleryImagesInput.files || []);
+          const folderBase = `plants/${model_label.replace(/\s+/g, "-")}`;
+
+          if (id) {
+            const existingPlant = plants.find((p) => p.id === Number(id));
+            image_url = existingPlant?.image_url || null;
+
+            if (mainImageFile) {
+              image_url = await uploadFileToStorage(
+                mainImageFile,
+                `${folderBase}/main`,
+              );
+            }
+
+            const { error } = await supabaseClient
+              .from("plants")
+              .update({
+                name,
+                model_label,
+                scientific_name,
+                category_id,
+                description,
+                care_instructions,
+                image_url,
+                is_active,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", id);
+
+            if (error) throw error;
+
+            if (galleryFiles.length > 0) {
+              await replacePlantGalleryImages(
+                Number(id),
+                galleryFiles,
+                folderBase,
+              );
+            }
+
+            showStatus("Plant updated.");
+          } else {
+            if (mainImageFile) {
+              image_url = await uploadFileToStorage(
+                mainImageFile,
+                `${folderBase}/main`,
+              );
+            }
+
+            const { data: insertedPlant, error } = await supabaseClient
+              .from("plants")
+              .insert({
+                name,
+                model_label,
+                scientific_name,
+                category_id,
+                description,
+                care_instructions,
+                image_url,
+                is_active,
+              })
+              .select()
+              .single();
+
+            if (error) throw error;
+
+            if (galleryFiles.length > 0) {
+              await insertPlantGalleryImages(
+                insertedPlant.id,
+                galleryFiles,
+                folderBase,
+              );
+            }
+
+            showStatus("Plant created.");
+          }
+
+          resetPlantForm();
+          await loadPlants();
+          await loadDashboardStats();
+        } catch (error) {
+          console.log(error);
+          showStatus(
+            "Failed to save plant. Check console and RLS/storage settings.",
+            "error",
+          );
+        }
+      });
+
+      plantSearchInput.addEventListener("input", () => {
+        const keyword = plantSearchInput.value.trim().toLowerCase();
+
+        if (!keyword) {
+          renderPlantsTable(plants);
+          return;
+        }
+
+        const filtered = plants.filter((plant) => {
+          return (
+            (plant.name || "").toLowerCase().includes(keyword) ||
+            (plant.model_label || "").toLowerCase().includes(keyword) ||
+            (plant.scientific_name || "").toLowerCase().includes(keyword)
+          );
+        });
+
+        renderPlantsTable(filtered);
+      });
+
+      async function initAdmin() {
+        showSection("dashboardSection");
+        await loadCategories();
+        await loadPlants();
+        await loadDashboardStats();
+      }
+
+      function updateFileName(inputId, textId) {
+        const input = document.getElementById(inputId);
+        const text = document.getElementById(textId);
+
+        if (input.files && input.files.length > 0) {
+          text.textContent = input.files[0].name;
+        } else {
+          text.textContent = "No file chosen";
+        }
+      }
+
+      function updateGalleryFileName() {
+        const input = document.getElementById("plantGalleryImages");
+        const text = document.getElementById("galleryImageFileName");
+
+        if (input.files && input.files.length > 0) {
+          text.textContent =
+            input.files.length === 1
+              ? input.files[0].name
+              : `${input.files.length} files selected`;
+        } else {
+          text.textContent = "No files chosen";
+        }
+      }
+
+      initAdmin();
+    </script>
+  </body>
+</html>

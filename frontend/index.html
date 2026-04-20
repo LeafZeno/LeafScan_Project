@@ -1,166 +1,439 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Leaf Scan</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-
-<body class="bg-slate-900 min-h-screen flex items-center justify-center">
-
-  <div class="bg-slate-700 p-6 rounded-lg shadow-lg w-full max-w-md">
-    <h1 class="text-2xl text-white font-bold text-center mb-4">
-      🌿 Leaf Plant Identification
-    </h1>
-
-    <!-- Upload -->
-    <input
-      type="file"
-      id="imageInput"
-      accept="image/*"
-      class="hidden"
-    />
-    <label
-      for="imageInput"
-      class="block bg-slate-700 text-white text-center py-2 rounded-lg cursor-pointer mb-4"
+  <head>
+    <meta charset="UTF-8" />
+    <title>LeafScan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <script src="auth.js"></script>
+  </head>
+  <body class="bg-slate-950 text-white min-h-screen">
+    <header
+      class="sticky top-0 z-50 bg-slate-950/90 backdrop-blur border-b border-slate-800"
     >
-      Choose Leaf Image
-    <!-- Image Preview -->
-    <img
-      id="preview"
-      class="hidden w-full h-64 object-contain bg-grey-100 rounded mb-3"
-    />
+      <div
+        class="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+      >
+        <div class="flex items-center gap-3">
+          <div class="text-2xl font-bold text-green-400">LeafScan</div>
+        </div>
 
-    <!-- Predict Button -->
-    <button
-      onclick="predict()"
-      class="bg-green-600 text-white w-full py-2 rounded hover:bg-green-700"
-    >
-      Predict
-    </button>
+        <div class="w-full md:max-w-xl">
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="Search plants..."
+            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-green-500"
+          />
+        </div>
 
-    <!-- Loading Spinner -->
-    <div id="loading" class="hidden text-center mt-4">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-      <p class="text-sm mt-2">Analyzing leaf...</p>
-    </div>
-
-    <!-- Result -->
-    <div id="result" class="hidden mt-4">
-      <p class="text-lg">
-        Top Prediction:
-        <a
-          id="plantLink"
-          href="#"
-          class="text-green-700 font-semibold underline"
-        ></a>
-      </p>
-
-      <!-- Confidence Bar -->
-      <div class="w-full bg-gray-200 rounded-full h-4 mt-2">
-        <div
-          id="confidenceBar"
-          class="h-4 rounded-full bg-green-500"
-          style="width: 0%"
-        ></div>
+        <div id="authButtons" class="flex item-center gap-3"></div>
       </div>
+    </header>
 
-      <p id="confidenceText" class="text-sm mt-1"></p>
+    <main class="max-w-7xl mx-auto px-4 py-6">
+      <!-- Hero -->
+      <section
+        id="heroSection"
+        class="relative overflow-hidden rounded-3xl bg-slate-900 min-h-[420px] flex items-end mb-10 border border-slate-800"
+      >
+        <img
+          id="heroImage"
+          src=""
+          alt="Featured plant"
+          class="absolute inset-0 w-full h-full object-cover opacity-40 transition-all duration-700"
+        />
+        <div
+          class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent"
+        ></div>
 
-      <!-- Top 3 Predictions -->
-      <div id="top3" class="mt-4 text-sm"></div>
-    </div>
+        <!-- Left Arrow -->
+        <button
+          id="heroPrev"
+          class="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-slate-900/70 hover:bg-slate-800 text-2xl flex items-center justify-center border border-slate-700"
+        >
+          &#10094;
+        </button>
 
-    <!-- Error -->
-    <p id="error" class="text-red-500 mt-3"></p>
-  </div>
+        <!-- Right Arrow -->
+        <button
+          id="heroNext"
+          class="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-slate-900/70 hover:bg-slate-800 text-2xl flex items-center justify-center border border-slate-700"
+        >
+          &#10095;
+        </button>
 
-  <script>
-    const imageInput = document.getElementById("imageInput");
-    const preview = document.getElementById("preview");
-    const resultBox = document.getElementById("result");
-    const errorBox = document.getElementById("error");
-    const plantLink = document.getElementById("plantLink");
-    const confidenceBar = document.getElementById("confidenceBar");
-    const confidenceText = document.getElementById("confidenceText");
-    const top3Div = document.getElementById("top3");
-    const loading = document.getElementById("loading");
+        <div class="relative z-10 p-8 md:p-12 max-w-2xl">
+          <p class="text-green-400 text-sm font-semibold mb-3">
+            Featured Plant
+          </p>
+          <h1 id="heroName" class="text-4xl md:text-5xl font-bold mb-4">
+            Loading...
+          </h1>
+          <p id="heroScientific" class="text-slate-300 italic mb-4"></p>
+          <p id="heroDescription" class="text-slate-200 leading-7 mb-6"></p>
 
-    // Image preview
-    imageInput.addEventListener("change", () => {
-      const file = imageInput.files[0];
-      if (!file) return;
+          <div class="flex flex-wrap gap-3">
+            <a
+              id="heroDetailsBtn"
+              href="#"
+              class="px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 font-medium"
+            >
+              View Details
+            </a>
+            <a
+              href="scan.html"
+              class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 font-medium"
+            >
+              Scan Plant
+            </a>
+            <a
+              href="plants.html"
+              class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 font-medium"
+            >
+              Browse All Plants
+            </a>
+          </div>
+        </div>
+      </section>
 
-      preview.src = URL.createObjectURL(file);
-      preview.classList.remove("hidden");
-      resultBox.classList.add("hidden");
-      errorBox.textContent = "";
-    });
+      <!-- Popular -->
+      <section class="mb-10">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-2xl font-bold">Popular Plants</h2>
+          <a href="plants.html" class="text-green-400 hover:underline"
+            >See all</a
+          >
+        </div>
+        <div
+          id="popularRow"
+          class="flex gap-5 overflow-x-auto pb-3 scroll-smooth"
+        ></div>
+      </section>
 
-    async function predict() {
-      const file = imageInput.files[0];
-      if (!file) {
-        errorBox.textContent = "Please select an image first.";
-        return;
+      <!-- New -->
+      <section class="mb-10">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-2xl font-bold">New Plants</h2>
+          <a href="plants.html" class="text-green-400 hover:underline"
+            >See all</a
+          >
+        </div>
+        <div
+          id="newRow"
+          class="flex gap-5 overflow-x-auto pb-3 scroll-smooth"
+        ></div>
+      </section>
+
+      <!-- Categories -->
+      <section class="mb-10">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-2xl font-bold">Categories</h2>
+        </div>
+        <div id="categoryRow" class="flex gap-4 overflow-x-auto pb-2"></div>
+      </section>
+
+      <!-- CTA -->
+      <section class="rounded-3xl border border-slate-800 bg-slate-900 p-8">
+        <div
+          class="flex flex-col md:flex-row md:items-center md:justify-between gap-5"
+        >
+          <div>
+            <h2 class="text-3xl font-bold mb-3">
+              Need help identifying a plant?
+            </h2>
+            <p class="text-slate-300 max-w-2xl">
+              Upload a leaf image and let LeafScan predict the plant for you,
+              then jump straight into the plant details page.
+            </p>
+          </div>
+
+          <a
+            href="scan.html"
+            class="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-green-600 hover:bg-green-700 font-medium"
+          >
+            Go to Scan Page
+          </a>
+        </div>
+      </section>
+
+      <div id="errorBox" class="hidden mt-8 text-red-400"></div>
+    </main>
+
+    <script>
+      const heroImage = document.getElementById("heroImage");
+      const heroName = document.getElementById("heroName");
+      const heroScientific = document.getElementById("heroScientific");
+      const heroDescription = document.getElementById("heroDescription");
+      const heroDetailsBtn = document.getElementById("heroDetailsBtn");
+      const heroPrev = document.getElementById("heroPrev");
+      const heroNext = document.getElementById("heroNext");
+      const heroSection = document.getElementById("heroSection");
+
+      const popularRow = document.getElementById("popularRow");
+      const newRow = document.getElementById("newRow");
+      const categoryRow = document.getElementById("categoryRow");
+      const searchInput = document.getElementById("searchInput");
+      const errorBox = document.getElementById("errorBox");
+
+      let allPlants = [];
+      let featuredPlants = [];
+      let currentHeroIndex = 0;
+      let heroInterval = null;
+
+      function createPlantCard(plant) {
+        const card = document.createElement("a");
+        card.href = `plant.html?id=${plant.id}`;
+        card.className =
+          "min-w-[260px] max-w-[260px] bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:bg-slate-800 transition";
+
+        card.innerHTML = `
+        <img
+          src="${plant.image_url || ""}"
+          alt="${plant.name || "Plant"}"
+          class="w-full h-44 object-cover bg-slate-800"
+        />
+        <div class="p-4">
+          <h3 class="text-lg font-semibold">${plant.name || "Unnamed plant"}</h3>
+          <p class="text-sm text-slate-400 italic mt-1">${plant.scientific_name || ""}</p>
+          <p class="text-sm text-slate-300 mt-3">
+            ${truncateText(plant.description || "No description available.", 110)}
+          </p>
+        </div>
+      `;
+
+        return card;
       }
 
-      const formData = new FormData();
-      formData.append("image", file);
+      function truncateText(text, limit) {
+        if (!text) return "";
+        if (text.length <= limit) return text;
+        return text.slice(0, limit) + "...";
+      }
 
-      loading.classList.remove("hidden");
-      resultBox.classList.add("hidden");
-      errorBox.textContent = "";
-
-      try {
-        const response = await fetch("http://127.0.0.1:5000/predict", {
-          method: "POST",
-          body: formData
+      function renderRow(container, plants) {
+        container.innerHTML = "";
+        plants.forEach((plant) => {
+          container.appendChild(createPlantCard(plant));
         });
+      }
 
-        const data = await response.json();
-        loading.classList.add("hidden");
+      async function renderCategories() {
+        const { data: categories, error } = await supabaseClient
+          .from("categories")
+          .select("*")
+          .order("id", { ascending: true });
 
-        if (data.error) {
-          errorBox.textContent = data.error;
+        if (error) {
+          console.log("Category error:", error);
+          categoryRow.innerHTML = `
+          <div class="px-5 py-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-300">
+            Failed to load categories
+          </div>
+        `;
           return;
         }
 
-        const top3 = data.top_predictions;
-        const best = top3[0];
+        categoryRow.innerHTML = "";
 
-        // Main result
-        plantLink.textContent = best.plant;
-        plantLink.href = `plant.html?name=${encodeURIComponent(best.plant)}`;
+        const allChip = document.createElement("button");
+        allChip.className =
+          "px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 whitespace-nowrap";
+        allChip.textContent = "All";
+        allChip.onclick = () => {
+          renderHero(featuredPlants[0] || allPlants[0]);
+          renderRow(popularRow, allPlants.slice(0, 8));
+          renderRow(newRow, [...allPlants].reverse().slice(0, 8));
+        };
+        categoryRow.appendChild(allChip);
 
-        confidenceText.textContent = `Confidence: ${best.confidence}%`;
-        confidenceBar.style.width = best.confidence + "%";
+        categories.forEach((cat) => {
+          const chip = document.createElement("button");
+          chip.className =
+            "px-5 py-3 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 whitespace-nowrap";
+          chip.textContent = cat.name;
 
-        // Confidence color
-        confidenceBar.className =
-          best.confidence >= 70
-            ? "h-4 rounded-full bg-green-500"
-            : best.confidence >= 50
-            ? "h-4 rounded-full bg-yellow-500"
-            : "h-4 rounded-full bg-red-500";
+          chip.onclick = () => {
+            const filtered = allPlants.filter((p) => p.category_id === cat.id);
+            renderHero(filtered[0] || featuredPlants[0] || allPlants[0]);
+            renderRow(popularRow, filtered.slice(0, 8));
+            renderRow(newRow, [...filtered].reverse().slice(0, 8));
+          };
 
-        // Top 3 list
-        top3Div.innerHTML =
-          "<strong>Top 3 Predictions:</strong><ul class='mt-2 list-disc pl-5'>";
+          categoryRow.appendChild(chip);
+        });
+      }
 
-        top3.forEach(item => {
-          top3Div.innerHTML +=
-            `<li>${item.plant} — ${item.confidence}%</li>`;
+      function renderHero(plant) {
+        if (!plant) return;
+
+        heroImage.style.opacity = "0.15";
+
+        setTimeout(() => {
+          heroImage.src = plant.image_url || "";
+          heroName.textContent = plant.name || "Featured Plant";
+          heroScientific.textContent = plant.scientific_name || "";
+          heroDescription.textContent = truncateText(
+            plant.description ||
+              "Explore one of the highlighted plants in LeafScan.",
+            260,
+          );
+          heroDetailsBtn.href = `plant.html?id=${plant.id}`;
+          heroImage.style.opacity = "0.4";
+        }, 200);
+      }
+
+      function showHeroByIndex(index) {
+        if (!featuredPlants.length) return;
+        currentHeroIndex =
+          (index + featuredPlants.length) % featuredPlants.length;
+        renderHero(featuredPlants[currentHeroIndex]);
+      }
+
+      function nextHero() {
+        showHeroByIndex(currentHeroIndex + 1);
+      }
+
+      function prevHero() {
+        showHeroByIndex(currentHeroIndex - 1);
+      }
+
+      function startHeroSlider() {
+        stopHeroSlider();
+        heroInterval = setInterval(() => {
+          nextHero();
+        }, 4000);
+      }
+
+      function stopHeroSlider() {
+        if (heroInterval) {
+          clearInterval(heroInterval);
+          heroInterval = null;
+        }
+      }
+
+      function filterPlants(keyword) {
+        const normalized = keyword.trim().toLowerCase();
+
+        if (!normalized) {
+          featuredPlants = allPlants.slice(0, 6);
+          currentHeroIndex = 0;
+          renderHero(featuredPlants[0] || allPlants[0]);
+          renderRow(popularRow, allPlants.slice(0, 8));
+          renderRow(newRow, [...allPlants].reverse().slice(0, 8));
+          startHeroSlider();
+          return;
+        }
+
+        const filtered = allPlants.filter((plant) => {
+          const name = (plant.name || "").toLowerCase();
+          const scientific = (plant.scientific_name || "").toLowerCase();
+          return name.includes(normalized) || scientific.includes(normalized);
         });
 
-        top3Div.innerHTML += "</ul>";
+        featuredPlants = filtered.slice(0, 6);
+        currentHeroIndex = 0;
+        renderHero(featuredPlants[0] || filtered[0] || allPlants[0]);
+        renderRow(popularRow, filtered.slice(0, 8));
+        renderRow(newRow, [...filtered].reverse().slice(0, 8));
 
-        resultBox.classList.remove("hidden");
-      } catch (err) {
-        loading.classList.add("hidden");
-        errorBox.textContent = "Failed to connect to API.";
+        if (featuredPlants.length > 1) {
+          startHeroSlider();
+        } else {
+          stopHeroSlider();
+        }
       }
-    }
-  </script>
 
-</body>
+      async function loadHomepageData() {
+        const { data, error } = await supabaseClient
+          .from("plants")
+          .select("*")
+          .eq("is_active", true)
+          .order("created_at", { ascending: true });
+
+        if (error) {
+          console.log("Homepage query error:", error);
+          errorBox.textContent = "Failed to load plants from Supabase.";
+          errorBox.classList.remove("hidden");
+          return;
+        }
+
+        allPlants = data || [];
+
+        if (allPlants.length === 0) {
+          heroName.textContent = "No plants available yet";
+          heroScientific.textContent = "";
+          heroDescription.textContent =
+            "Add some plant records in Supabase to populate the homepage.";
+          heroDetailsBtn.style.display = "none";
+          heroPrev.style.display = "none";
+          heroNext.style.display = "none";
+          return;
+        }
+
+        featuredPlants = allPlants.slice(0, 6);
+        currentHeroIndex = 0;
+
+        renderHero(featuredPlants[0]);
+        renderRow(popularRow, allPlants.slice(0, 8));
+        renderRow(newRow, [...allPlants].reverse().slice(0, 8));
+        renderCategories();
+
+        if (featuredPlants.length > 1) {
+          startHeroSlider();
+        } else {
+          heroPrev.style.display = "none";
+          heroNext.style.display = "none";
+        }
+      }
+
+      heroPrev.addEventListener("click", () => {
+        prevHero();
+        startHeroSlider();
+      });
+
+      heroNext.addEventListener("click", () => {
+        nextHero();
+        startHeroSlider();
+      });
+
+      heroSection.addEventListener("mouseenter", stopHeroSlider);
+      heroSection.addEventListener("mouseleave", () => {
+        if (featuredPlants.length > 1) startHeroSlider();
+      });
+
+      searchInput.addEventListener("input", (e) => {
+        filterPlants(e.target.value);
+      });
+
+      async function renderAuthButtons() {
+        const authButtons = document.getElementById("authButtons");
+        const user = await getCurrentUser();
+
+        if (user) {
+          authButtons.innerHTML = `
+          <a href="profile.html" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700">
+            profile
+          </a>
+          <button onclick="sighOutUser()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700">
+            Logout
+          </button>
+        `;
+        } else {
+          authButtons.innerHTML = `
+          <a href="login.html" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700">
+            Login
+          </a>
+          <a href="register.html" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700">
+            Sign Up
+          </a>
+        `;
+        }
+      }
+
+      loadHomepageData();
+      renderAuthButtons();
+    </script>
+  </body>
 </html>

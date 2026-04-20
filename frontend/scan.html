@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Leaf Scan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+  </head>
+
+  <body class="bg-slate-900 min-h-screen flex items-center justify-center">
+    <div class="bg-slate-700 p-6 rounded-lg shadow-lg w-full max-w-md">
+      <div class="flex items-center justify-between mb-4">
+        <h1 class="text-2xl text-white font-bold">
+          🌿 Leaf Plant Identification
+        </h1>
+        <a
+          href="index.html"
+          class="text-sm bg-slate-600 text-white px-3 py-2 rounded hover:bg-slate-500"
+        >
+          Home
+        </a>
+      </div>
+
+      <!-- Upload -->
+      <input type="file" id="imageInput" accept="image/*" class="hidden" />
+      <label
+        for="imageInput"
+        class="block bg-slate-600 text-white text-center py-2 rounded-lg cursor-pointer mb-4 hover:bg-slate-500"
+      >
+        Choose Leaf Image
+      </label>
+
+      <!-- Image Preview -->
+      <img
+        id="preview"
+        class="hidden w-full h-64 object-contain bg-slate-200 rounded mb-3"
+        alt="Preview"
+      />
+
+      <!-- Predict Button -->
+      <button
+        onclick="predict()"
+        class="bg-green-600 text-white w-full py-2 rounded hover:bg-green-700"
+      >
+        Predict
+      </button>
+
+      <!-- Loading Spinner -->
+      <div id="loading" class="hidden text-center mt-4 text-white">
+        <div
+          class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"
+        ></div>
+        <p class="text-sm mt-2">Analyzing leaf...</p>
+      </div>
+
+      <!-- Result -->
+      <div id="result" class="hidden mt-4 text-white">
+        <p class="text-lg">
+          Top Prediction:
+          <span id="plantLink" class="text-green-400 font-semibold"></span>
+        </p>
+
+        <!-- View Details Button -->
+        <button
+          id="viewBtn"
+          class="hidden mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          View Details
+        </button>
+
+        <!-- Confidence Bar -->
+        <div class="w-full bg-gray-200 rounded-full h-4 mt-3">
+          <div
+            id="confidenceBar"
+            class="h-4 rounded-full bg-green-500"
+            style="width: 0%"
+          ></div>
+        </div>
+
+        <p id="confidenceText" class="text-sm mt-1"></p>
+
+        <!-- Top 3 Predictions -->
+        <div id="top3" class="mt-4 text-sm"></div>
+      </div>
+
+      <!-- Error -->
+      <p id="error" class="text-red-400 mt-3"></p>
+    </div>
+
+    <script>
+      const imageInput = document.getElementById("imageInput");
+      const preview = document.getElementById("preview");
+      const resultBox = document.getElementById("result");
+      const errorBox = document.getElementById("error");
+      const plantLink = document.getElementById("plantLink");
+      const viewBtn = document.getElementById("viewBtn");
+      const confidenceBar = document.getElementById("confidenceBar");
+      const confidenceText = document.getElementById("confidenceText");
+      const top3Div = document.getElementById("top3");
+      const loading = document.getElementById("loading");
+
+      imageInput.addEventListener("change", () => {
+        const file = imageInput.files[0];
+        if (!file) return;
+
+        preview.src = URL.createObjectURL(file);
+        preview.classList.remove("hidden");
+        resultBox.classList.add("hidden");
+        errorBox.textContent = "";
+        viewBtn.classList.add("hidden");
+        viewBtn.onclick = null;
+      });
+
+      async function predict() {
+        const file = imageInput.files[0];
+
+        if (!file) {
+          errorBox.textContent = "Please select an image first.";
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        loading.classList.remove("hidden");
+        resultBox.classList.add("hidden");
+        errorBox.textContent = "";
+        viewBtn.classList.add("hidden");
+        viewBtn.onclick = null;
+
+        try {
+          const response = await fetch("http://127.0.0.1:5000/predict", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+          loading.classList.add("hidden");
+
+          if (data.error) {
+            errorBox.textContent = data.error;
+            return;
+          }
+
+          const top3 = data.top_predictions || [];
+          const best = top3[0];
+
+          // Main result
+          plantLink.textContent = data.plant || "Unknown result";
+
+          if (data.plant === "Unknown plant") {
+            plantLink.className = "text-red-400 font-semibold";
+            viewBtn.classList.add("hidden");
+
+            confidenceText.textContent = best
+              ? `Best match confidence: ${best.confidence}% (below threshold)`
+              : "Confidence too low";
+          } else {
+            plantLink.className = "text-green-400 font-semibold";
+
+            // Find plant in Supabase by model_label, then open by id
+            const { data: matchedPlant, error: matchedPlantError } =
+              await supabaseClient
+                .from("plants")
+                .select("id")
+                .eq("model_label", data.plant)
+                .single();
+
+            if (matchedPlantError || !matchedPlant) {
+              console.log("Plant lookup error:", matchedPlantError);
+              viewBtn.classList.add("hidden");
+              confidenceText.textContent = best
+                ? `Confidence: ${best.confidence}% — detail page not found in database`
+                : "Detail page not found in database";
+            } else {
+              const detailUrl = `plant.html?id=${matchedPlant.id}`;
+
+              viewBtn.classList.remove("hidden");
+              viewBtn.onclick = () => {
+                window.location.href = detailUrl;
+              };
+
+              confidenceText.textContent = best
+                ? `Confidence: ${best.confidence}%`
+                : "";
+            }
+          }
+
+          // Confidence bar
+          if (best) {
+            confidenceBar.style.width = best.confidence + "%";
+            confidenceBar.className =
+              best.confidence >= 70
+                ? "h-4 rounded-full bg-green-500"
+                : best.confidence >= 50
+                  ? "h-4 rounded-full bg-yellow-500"
+                  : "h-4 rounded-full bg-red-500";
+          } else {
+            confidenceBar.style.width = "0%";
+            confidenceBar.className = "h-4 rounded-full bg-red-500";
+          }
+
+          // Top 3 list
+          if (top3.length > 0) {
+            let html =
+              "<strong>Top 3 Predictions:</strong><ul class='mt-2 list-disc pl-5'>";
+            top3.forEach((item) => {
+              html += `<li>${item.plant} — ${item.confidence}%</li>`;
+            });
+            html += "</ul>";
+            top3Div.innerHTML = html;
+          } else {
+            top3Div.innerHTML = "<strong>No predictions available.</strong>";
+          }
+
+          resultBox.classList.remove("hidden");
+        } catch (err) {
+          console.log("Predict error:", err);
+          loading.classList.add("hidden");
+          errorBox.textContent = "Failed to connect to API.";
+        }
+      }
+    </script>
+  </body>
+</html>

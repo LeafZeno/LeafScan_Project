@@ -44,23 +44,21 @@ def predict():
     top_predictions = []
 
     for i in top_indices:
-        top_predictions.append({
-            "plant": CLASS_NAMES[i],
-            "confidence": round(float(preds[i]) * 100, 2)
-        })
+        top_predictions.append(
+            {"plant": CLASS_NAMES[i], "confidence": round(float(preds[i]) * 100, 2)}
+        )
 
     # Unknown threshold (optional)
     if top_predictions[0]["confidence"] < 50:
-        return jsonify({
-            "plant": "Unknown plant",
-            "top_predictions": top_predictions
-        })
+        return jsonify({"plant": "Unknown plant", "top_predictions": top_predictions})
 
-    return jsonify({
-        "plant": top_predictions[0]["plant"],
-        "confidence": top_predictions[0]["confidence"],
-        "top_predictions": top_predictions
-    })
+    return jsonify(
+        {
+            "plant": top_predictions[0]["plant"],
+            "confidence": top_predictions[0]["confidence"],
+            "top_predictions": top_predictions,
+        }
+    )
 
 
 if __name__ == "__main__":

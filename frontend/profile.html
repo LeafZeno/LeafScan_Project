@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Profile - LeafScan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <script src="auth.js"></script>
+  </head>
+  <body class="bg-slate-950 text-white min-h-screen">
+    <header class="border-b border-slate-800 bg-slate-950/90 backdrop-blur">
+      <div
+        class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between"
+      >
+        <a href="index.html" class="text-2xl font-bold text-green-400"
+          >LeafScan</a
+        >
+        <button
+          onclick="signOutUser()"
+          class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700"
+        >
+          Logout
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-8">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8">
+        <h1 class="text-3xl font-bold mb-6">My Profile</h1>
+
+        <div class="space-y-4">
+          <div>
+            <p class="text-slate-400 text-sm">Full Name</p>
+            <p id="fullName" class="text-lg">Loading...</p>
+          </div>
+
+          <div>
+            <p class="text-slate-400 text-sm">Email</p>
+            <p id="email" class="text-lg">Loading...</p>
+          </div>
+
+          <div>
+            <p class="text-slate-400 text-sm">Role</p>
+            <p id="role" class="text-lg">Loading...</p>
+          </div>
+
+          <div class="mt-6">
+            <a
+              href="favorites.html"
+              class="inline-block px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-medium"
+            >
+              View My Favorites
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      async function loadProfile() {
+        const user = await requireAuth("login.html");
+        if (!user) return;
+
+        const { data: profile, error } = await supabaseClient
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (error) {
+          console.log(error);
+          return;
+        }
+
+        document.getElementById("fullName").textContent =
+          profile.full_name || "-";
+        document.getElementById("email").textContent =
+          profile.email || user.email || "-";
+        document.getElementById("role").textContent = profile.role || "user";
+      }
+
+      loadProfile();
+    </script>
+  </body>
+</html>
