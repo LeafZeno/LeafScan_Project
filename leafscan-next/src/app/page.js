@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import AppShell from "@/components/AppShell";
 import { supabase } from "@/lib/supabase";
-import Navbar from "@/components/Navbar";
 
 function truncateText(text, limit) {
   if (!text) return "";
@@ -15,277 +15,217 @@ function PlantCard({ plant }) {
   return (
     <Link
       href={`/plant/${plant.id}`}
-      className="min-w-[260px] max-w-[260px] bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:bg-slate-800 transition"
+      className="min-w-[220px] max-w-[220px] md:min-w-0 md:max-w-none bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:bg-slate-800 transition"
     >
-      {plant?.image_url ? (
+      {plant.image_url ? (
         <img
           src={plant.image_url}
           alt={plant.name || "Plant"}
-          className="w-full h-44 object-cover bg-slate-800"
+          className="w-full h-36 md:h-44 object-cover bg-slate-800"
         />
       ) : (
-        <div className="w-full h-44 bg-slate-800" />
+        <div className="w-full h-36 md:h-44 bg-slate-800" />
       )}
 
-      <div className="p-4">
-        <h3 className="text-lg font-semibold">
+      <div className="p-3">
+        <h3 className="font-bold text-white leading-tight">
           {plant.name || "Unnamed plant"}
         </h3>
         <p className="text-sm text-slate-400 italic mt-1">
           {plant.scientific_name || ""}
-        </p>
-        <p className="text-sm text-slate-300 mt-3">
-          {truncateText(plant.description || "No description available.", 110)}
         </p>
       </div>
     </Link>
   );
 }
 
-export default function HomePage() {
-  const [allPlants, setAllPlants] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [filteredPlants, setFilteredPlants] = useState([]);
-  const [heroIndex, setHeroIndex] = useState(0);
-  const [search, setSearch] = useState("");
-  const [error, setError] = useState("");
+function SectionRow({ title, plants }) {
+  return (
+    <section className="mb-10">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold">{title}</h2>
+        <Link href="/plants" className="text-green-400 hover:underline text-sm">
+          See all
+        </Link>
+      </div>
 
-  const featuredPlants = useMemo(
-    () => filteredPlants.slice(0, 6),
-    [filteredPlants],
+      <div className="flex md:grid md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-x-auto md:overflow-visible pb-3">
+        {plants.map((plant) => (
+          <PlantCard key={plant.id} plant={plant} />
+        ))}
+      </div>
+    </section>
   );
-  const heroPlant = featuredPlants[heroIndex] || filteredPlants[0] || null;
+}
+
+export default function HomePage() {
+  const [plants, setPlants] = useState([]);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadData() {
-      const [
-        { data: plantsData, error: plantsError },
-        { data: categoriesData, error: categoriesError },
-      ] = await Promise.all([
-        supabase
-          .from("plants")
-          .select("*")
-          .eq("is_active", true)
-          .order("created_at", { ascending: true }),
-        supabase
-          .from("categories")
-          .select("*")
-          .order("id", { ascending: true }),
-      ]);
+    async function loadPlants() {
+      setLoading(true);
 
-      if (plantsError) {
-        console.log(plantsError);
-        setError("Failed to load plants from Supabase.");
-        return;
+      const { data, error } = await supabase
+        .from("plants")
+        .select("*")
+        .eq("is_active", true)
+        .order("id", { ascending: true });
+
+      if (error) {
+        console.log("Home plants error:", error);
+        setPlants([]);
+      } else {
+        setPlants(data || []);
       }
 
-      if (categoriesError) {
-        console.log(categoriesError);
-      }
-
-      const plants = plantsData || [];
-      setAllPlants(plants);
-      setFilteredPlants(plants);
-      setCategories(categoriesData || []);
-      setHeroIndex(0);
+      setLoading(false);
     }
 
-    loadData();
+    loadPlants();
   }, []);
 
-  useEffect(() => {
-    if (featuredPlants.length <= 1) return;
+  const heroPlant = plants[heroIndex] || plants[0];
 
-    const interval = setInterval(() => {
-      setHeroIndex((prev) => (prev + 1) % featuredPlants.length);
-    }, 4000);
+  const popularPlants = useMemo(() => plants.slice(0, 8), [plants]);
+  const latestPlants = useMemo(() => plants.slice(-8).reverse(), [plants]);
 
-    return () => clearInterval(interval);
-  }, [featuredPlants]);
-
-  function handleSearch(value) {
-    setSearch(value);
-
-    const keyword = value.trim().toLowerCase();
-    if (!keyword) {
-      setFilteredPlants(allPlants);
-      setHeroIndex(0);
-      return;
-    }
-
-    const filtered = allPlants.filter((plant) => {
-      const name = (plant.name || "").toLowerCase();
-      const scientific = (plant.scientific_name || "").toLowerCase();
-      return name.includes(keyword) || scientific.includes(keyword);
-    });
-
-    setFilteredPlants(filtered);
-    setHeroIndex(0);
-  }
-
-  function filterByCategory(categoryId) {
-    const filtered = allPlants.filter(
-      (plant) => plant.category_id === categoryId,
-    );
-    setFilteredPlants(filtered);
-    setSearch("");
-    setHeroIndex(0);
-  }
-
-  function resetCategory() {
-    setFilteredPlants(allPlants);
-    setSearch("");
-    setHeroIndex(0);
+  function nextHero() {
+    if (plants.length === 0) return;
+    setHeroIndex((prev) => (prev + 1) % plants.length);
   }
 
   function prevHero() {
-    if (!featuredPlants.length) return;
-    setHeroIndex(
-      (prev) => (prev - 1 + featuredPlants.length) % featuredPlants.length,
+    if (plants.length === 0) return;
+    setHeroIndex((prev) => (prev - 1 + plants.length) % plants.length);
+  }
+
+  if (loading) {
+    return (
+      <AppShell>
+        <div className="text-center text-slate-300 py-20">
+          Loading LeafScan...
+        </div>
+      </AppShell>
     );
   }
 
-  function nextHero() {
-    if (!featuredPlants.length) return;
-    setHeroIndex((prev) => (prev + 1) % featuredPlants.length);
-  }
-
-  const popularPlants = filteredPlants.slice(0, 8);
-  const newPlants = [...filteredPlants].reverse().slice(0, 8);
-
   return (
-    <div className="bg-slate-950 text-white min-h-screen">
-      <Navbar />
+    <AppShell className="py-6">
+      {!heroPlant ? (
+        <div className="text-center py-20">
+          <h1 className="text-4xl font-bold mb-3">LeafScan</h1>
+          <p className="text-slate-400">No plants available yet.</p>
+        </div>
+      ) : (
+        <>
+          <section className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 min-h-[360px] md:min-h-[460px] mb-10">
+            {heroPlant.image_url && (
+              <img
+                src={heroPlant.image_url}
+                alt={heroPlant.name || "Featured plant"}
+                className="absolute inset-0 w-full h-full object-cover opacity-55"
+              />
+            )}
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
-      
-        <section className="relative overflow-hidden rounded-3xl bg-slate-900 min-h-[420px] flex items-end mb-10 border border-slate-800">
-          {heroPlant?.image_url ? (
-            <img
-              src={heroPlant.image_url}
-              alt={heroPlant?.name || "Featured plant"}
-              className="absolute inset-0 w-full h-full object-cover opacity-40 transition-all duration-700"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-slate-800" />
-          )}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/75 to-slate-950/15" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent" />
 
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent" />
+            <button
+              onClick={prevHero}
+              className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-950/60 hover:bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl"
+            >
+              ‹
+            </button>
 
-          {featuredPlants.length > 1 && (
-            <>
-              <button
-                onClick={prevHero}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-slate-900/70 hover:bg-slate-800 text-2xl flex items-center justify-center border border-slate-700"
-              >
-                &#10094;
-              </button>
+            <button
+              onClick={nextHero}
+              className="absolute right-3 md:right-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-950/60 hover:bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl"
+            >
+              ›
+            </button>
 
-              <button
-                onClick={nextHero}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-slate-900/70 hover:bg-slate-800 text-2xl flex items-center justify-center border border-slate-700"
-              >
-                &#10095;
-              </button>
-            </>
-          )}
+            <div className="relative z-10 p-6 md:p-12 max-w-2xl min-h-[360px] md:min-h-[460px] flex flex-col justify-end md:justify-center">
+              <p className="text-green-400 font-semibold mb-2">
+                Featured Plant
+              </p>
 
-          <div className="relative z-10 p-8 md:p-12 max-w-2xl">
-            <p className="text-green-400 text-sm font-semibold mb-3">
-              Featured Plant
-            </p>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              {heroPlant?.name || "No plants available yet"}
-            </h1>
-            <p className="text-slate-300 italic mb-4">
-              {heroPlant?.scientific_name || ""}
-            </p>
-            <p className="text-slate-200 leading-7 mb-6">
-              {truncateText(
-                heroPlant?.description ||
-                  "Add some plant records in Supabase to populate the homepage.",
-                260,
-              )}
-            </p>
+              <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-3">
+                {heroPlant.name}
+              </h1>
 
-            <div className="flex flex-wrap gap-3">
-              {heroPlant && (
+              <p className="text-slate-300 italic mb-4">
+                {heroPlant.scientific_name || ""}
+              </p>
+
+              <p className="text-slate-100 leading-7 mb-6 max-w-xl">
+                {truncateText(heroPlant.description, 180)}
+              </p>
+
+              <div className="flex flex-wrap gap-3">
                 <Link
                   href={`/plant/${heroPlant.id}`}
-                  className="px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 font-medium"
+                  className="px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 font-semibold"
                 >
                   View Details
                 </Link>
-              )}
+
+                <Link
+                  href="/scan"
+                  className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 font-semibold"
+                >
+                  Scan Plant
+                </Link>
+
+                <Link
+                  href="/plants"
+                  className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 font-semibold"
+                >
+                  Browse Plants
+                </Link>
+              </div>
+            </div>
+
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
+              {plants.slice(0, 5).map((plant, index) => (
+                <button
+                  key={plant.id}
+                  onClick={() => setHeroIndex(index)}
+                  className={`w-2.5 h-2.5 rounded-full ${
+                    index === heroIndex ? "bg-white" : "bg-white/40"
+                  }`}
+                />
+              ))}
+            </div>
+          </section>
+
+          <SectionRow title="Popular Plants" plants={popularPlants} />
+
+          <SectionRow title="Latest Plants" plants={latestPlants} />
+
+          <section className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-5 items-center">
+              <div>
+                <h2 className="text-2xl font-bold mb-2">
+                  Try LeafScan AI Scanner
+                </h2>
+                <p className="text-slate-400">
+                  Upload or take a leaf photo and get prediction results with
+                  confidence scores.
+                </p>
+              </div>
+
               <Link
                 href="/scan"
-                className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 font-medium"
+                className="px-6 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-center font-semibold"
               >
-                Scan Plant
-              </Link>
-              <Link
-                href="/plants"
-                className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 font-medium"
-              >
-                Browse All Plants
+                Start Scanning
               </Link>
             </div>
-          </div>
-        </section>
-
-        <section className="mb-10">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">Popular Plants</h2>
-            <Link href="/plants" className="text-green-400 hover:underline">
-              See all
-            </Link>
-          </div>
-          <div className="flex gap-5 overflow-x-auto pb-3 scroll-smooth">
-            {popularPlants.map((plant) => (
-              <PlantCard key={plant.id} plant={plant} />
-            ))}
-          </div>
-        </section>
-
-        <section className="mb-10">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">New Plants</h2>
-            <Link href="/plants" className="text-green-400 hover:underline">
-              See all
-            </Link>
-          </div>
-          <div className="flex gap-5 overflow-x-auto pb-3 scroll-smooth">
-            {newPlants.map((plant) => (
-              <PlantCard key={plant.id} plant={plant} />
-            ))}
-          </div>
-        </section>
-
-     
-
-        <section className="rounded-3xl border border-slate-800 bg-slate-900 p-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-            <div>
-              <h2 className="text-3xl font-bold mb-3">
-                Need help identifying a plant?
-              </h2>
-              <p className="text-slate-300 max-w-2xl">
-                Upload a leaf image and let LeafScan predict the plant for you,
-                then jump straight into the plant details page.
-              </p>
-            </div>
-
-            <Link
-              href="/scan"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-green-600 hover:bg-green-700 font-medium"
-            >
-              Go to Scan Page
-            </Link>
-          </div>
-        </section>
-
-        {error && <div className="mt-8 text-red-400">{error}</div>}
-      </main>
-    </div>
+          </section>
+        </>
+      )}
+    </AppShell>
   );
 }
