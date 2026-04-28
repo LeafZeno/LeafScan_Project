@@ -17,8 +17,7 @@ export default function ScanPage() {
   const [error, setError] = useState("");
   const [detailUrl, setDetailUrl] = useState("");
 
-  function handleFileChange(e) {
-    const file = e.target.files?.[0];
+  function handleFile(file) {
     if (!file) return;
 
     setImageFile(file);
@@ -38,6 +37,13 @@ export default function ScanPage() {
     setDetailUrl("");
   }
 
+  function getStatus(resultPlant) {
+    if (!resultPlant) return "empty";
+    if (resultPlant.includes("Unknown")) return "unknown";
+    if (resultPlant.includes("Uncertain")) return "uncertain";
+    return "known";
+  }
+
   function getBarColor(confidence) {
     if (confidence >= 70) return "bg-green-500";
     if (confidence >= 50) return "bg-yellow-500";
@@ -46,8 +52,8 @@ export default function ScanPage() {
 
   async function handlePredict() {
     if (!imageFile) {
-      showToast("Please choose a leaf image first.", "error");
-      setError("Please choose a leaf image first.");
+      showToast("Please choose or take a leaf image first.", "error");
+      setError("Please choose or take a leaf image first.");
       return;
     }
 
@@ -78,20 +84,24 @@ export default function ScanPage() {
       const predictions = data.top_predictions || [];
       const best = predictions[0] || null;
 
+      const finalPlant = data.plant || best?.plant || "Unknown plant";
+      const confidence = data.confidence || best?.confidence || 0;
+
       setResult({
-        plant: data.plant || best?.plant || "Unknown plant",
-        confidence: best?.confidence || 0,
+        plant: finalPlant,
+        confidence,
+        status: data.status || getStatus(finalPlant),
       });
 
       setTop3(predictions);
 
-      const predictedPlant = data.plant || best?.plant;
+      const status = data.status || getStatus(finalPlant);
 
-      if (predictedPlant && predictedPlant !== "Unknown plant") {
+      if (status === "known" && finalPlant !== "Unknown plant") {
         const { data: matchedPlant, error: matchedPlantError } = await supabase
           .from("plants")
           .select("id")
-          .eq("model_label", predictedPlant)
+          .eq("model_label", finalPlant)
           .maybeSingle();
 
         if (!matchedPlantError && matchedPlant) {
@@ -109,6 +119,8 @@ export default function ScanPage() {
     setLoading(false);
   }
 
+  const status = getStatus(result?.plant);
+
   return (
     <AppShell>
       <div className="max-w-6xl mx-auto">
@@ -118,29 +130,47 @@ export default function ScanPage() {
             Identify a Plant From a Leaf Image
           </h1>
           <p className="text-slate-400 mt-3 max-w-2xl mx-auto">
-            Upload a leaf image and LeafScan will predict the most likely plant
-            class with confidence scores.
+            Upload or take a leaf photo. LeafScan will predict the closest plant
+            match and show confidence scores.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-8">
           <section className="bg-slate-900 border border-slate-800 rounded-3xl p-6 h-fit">
-            <h2 className="text-2xl font-bold mb-4">Upload Image</h2>
+            <h2 className="text-2xl font-bold mb-4">Image Input</h2>
 
             <input
               type="file"
-              id="imageInput"
+              id="uploadInput"
               accept="image/*"
               className="hidden"
-              onChange={handleFileChange}
+              onChange={(e) => handleFile(e.target.files?.[0])}
             />
 
-            <label
-              htmlFor="imageInput"
-              className="block w-full text-center bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl py-3 cursor-pointer font-medium"
-            >
-              Choose Leaf Image
-            </label>
+            <input
+              type="file"
+              id="cameraInput"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => handleFile(e.target.files?.[0])}
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label
+                htmlFor="uploadInput"
+                className="block text-center bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl py-3 cursor-pointer font-medium"
+              >
+                Upload Image
+              </label>
+
+              <label
+                htmlFor="cameraInput"
+                className="block text-center bg-green-600 hover:bg-green-700 rounded-xl py-3 cursor-pointer font-medium"
+              >
+                Take Photo
+              </label>
+            </div>
 
             <div className="mt-5">
               {previewUrl ? (
@@ -190,8 +220,7 @@ export default function ScanPage() {
                     Waiting for your image
                   </h3>
                   <p className="text-slate-400 max-w-md">
-                    After you upload and scan a leaf image, the prediction
-                    result and confidence scores will appear here.
+                    Upload or take a leaf photo to see the AI prediction result.
                   </p>
                 </div>
               </div>
@@ -213,15 +242,27 @@ export default function ScanPage() {
               <div>
                 <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 mb-6">
                   <p className="text-slate-400 text-sm mb-2">Top Prediction</p>
+
                   <h3
                     className={`text-2xl font-bold ${
-                      result.plant === "Unknown plant"
+                      status === "unknown"
                         ? "text-red-400"
-                        : "text-green-400"
+                        : status === "uncertain"
+                          ? "text-yellow-400"
+                          : "text-green-400"
                     }`}
                   >
                     {result.plant}
                   </h3>
+
+                  <p className="text-slate-400 text-sm mt-3">
+                    {status === "unknown" &&
+                      "The image does not look confident enough to match one plant."}
+                    {status === "uncertain" &&
+                      "The model found similar matches, so this result may need manual checking."}
+                    {status === "known" &&
+                      "This is the most likely plant based on the uploaded image."}
+                  </p>
 
                   <div className="mt-4">
                     <div className="flex justify-between text-sm mb-2">
@@ -242,7 +283,7 @@ export default function ScanPage() {
                   </div>
 
                   <div className="mt-5 flex flex-wrap gap-3">
-                    {detailUrl && (
+                    {detailUrl && status === "known" && (
                       <Link
                         href={detailUrl}
                         className="px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 font-medium"
@@ -257,6 +298,11 @@ export default function ScanPage() {
                     >
                       Browse Plants
                     </Link>
+                  </div>
+
+                  <div className="mt-5 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 text-sm leading-6">
+                    AI predictions may be inaccurate. Please compare the result
+                    with plant details and real plant characteristics.
                   </div>
                 </div>
 
