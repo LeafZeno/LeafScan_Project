@@ -6,7 +6,7 @@ import cv2
 import json
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 @app.route("/")
@@ -14,11 +14,9 @@ def home():
     return {"message": "LeafScan API is running"}
 
 
-# Load model ONCE at startup
 MODEL_PATH = "models/leaf_scan_model.h5"
 model = tf.keras.models.load_model(MODEL_PATH)
 
-# Load class names
 with open("models/class_names.json") as f:
     CLASS_NAMES = json.load(f)
 
@@ -37,15 +35,12 @@ def predict():
     if img is None:
         return jsonify({"error": "Invalid image"}), 400
 
-    # Preprocess
     img = cv2.resize(img, (224, 224))
     img = img / 255.0
     img = np.expand_dims(img, axis=0)
 
-    # Predict
     preds = model.predict(img)[0]
 
-    # Top 3 predictions
     top_indices = preds.argsort()[-3:][::-1]
     top_predictions = []
 
@@ -54,14 +49,25 @@ def predict():
             {"plant": CLASS_NAMES[i], "confidence": round(float(preds[i]) * 100, 2)}
         )
 
-    # Unknown threshold (optional)
-    if top_predictions[0]["confidence"] < 50:
-        return jsonify({"plant": "Unknown plant", "top_predictions": top_predictions})
+    top1 = top_predictions[0]
+    top2 = top_predictions[1] if len(top_predictions) > 1 else None
+
+    status = "known"
+    final_plant = top1["plant"]
+    confidence = top1["confidence"]
+
+    if confidence < 50:
+        status = "unknown"
+        final_plant = "Unknown plant"
+    elif top2 and (confidence - top2["confidence"] < 10):
+        status = "uncertain"
+        final_plant = f"Uncertain ({top1['plant']})"
 
     return jsonify(
         {
-            "plant": top_predictions[0]["plant"],
-            "confidence": top_predictions[0]["confidence"],
+            "status": status,
+            "plant": final_plant,
+            "confidence": confidence,
             "top_predictions": top_predictions,
         }
     )
