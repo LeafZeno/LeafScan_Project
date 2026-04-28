@@ -29,10 +29,25 @@ export default function ScanPage() {
     setDetailUrl("");
   }
 
+  function resetScan() {
+    setImageFile(null);
+    setPreviewUrl("");
+    setResult(null);
+    setTop3([]);
+    setError("");
+    setDetailUrl("");
+  }
+
+  function getBarColor(confidence) {
+    if (confidence >= 70) return "bg-green-500";
+    if (confidence >= 50) return "bg-yellow-500";
+    return "bg-red-500";
+  }
+
   async function handlePredict() {
     if (!imageFile) {
-      setError("Please select an image first.");
-      showToast("Please select an image first.", "error");
+      showToast("Please choose a leaf image first.", "error");
+      setError("Please choose a leaf image first.");
       return;
     }
 
@@ -57,160 +72,240 @@ export default function ScanPage() {
       const data = await response.json();
 
       if (!response.ok || data.error) {
-        setError(data.error || "Prediction failed.");
-        showToast(data.error || "Prediction failed.", "error");
-        setLoading(false);
-        return;
+        throw new Error(data.error || "Prediction failed.");
       }
 
       const predictions = data.top_predictions || [];
       const best = predictions[0] || null;
 
       setResult({
-        plant: data.plant || "Unknown result",
+        plant: data.plant || best?.plant || "Unknown plant",
         confidence: best?.confidence || 0,
       });
 
       setTop3(predictions);
 
-      if (data.plant && data.plant !== "Unknown plant") {
+      const predictedPlant = data.plant || best?.plant;
+
+      if (predictedPlant && predictedPlant !== "Unknown plant") {
         const { data: matchedPlant, error: matchedPlantError } = await supabase
           .from("plants")
           .select("id")
-          .eq("model_label", data.plant)
-          .single();
+          .eq("model_label", predictedPlant)
+          .maybeSingle();
 
         if (!matchedPlantError && matchedPlant) {
           setDetailUrl(`/plant/${matchedPlant.id}`);
-        } else {
-          console.log("Plant lookup error:", matchedPlantError);
         }
       }
 
       showToast("Scan completed.");
-      setLoading(false);
     } catch (err) {
       console.log("Predict error:", err);
-      setError("Failed to connect to Flask API.");
-      showToast("Failed to connect to Flask API.", "error");
-      setLoading(false);
+      setError("Failed to scan image. Please try again.");
+      showToast("Failed to scan image.", "error");
     }
-  }
 
-  function getBarColor(confidence) {
-    if (confidence >= 70) return "bg-green-500";
-    if (confidence >= 50) return "bg-yellow-500";
-    return "bg-red-500";
+    setLoading(false);
   }
 
   return (
-    <AppShell className="flex items-center justify-center">
-      <div className="bg-slate-700 p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl text-white font-bold text-center mb-4">
-          🌿 Leaf Plant Identification
-        </h1>
-
-        <input
-          type="file"
-          id="imageInput"
-          accept="image/*"
-          className="hidden"
-          onChange={handleFileChange}
-        />
-
-        <label
-          htmlFor="imageInput"
-          className="block bg-slate-600 text-white text-center py-2 rounded-lg cursor-pointer mb-4 hover:bg-slate-500"
-        >
-          Choose Leaf Image
-        </label>
-
-        {previewUrl && (
-          <img
-            src={previewUrl}
-            alt="Preview"
-            className="w-full h-64 object-contain bg-slate-200 rounded mb-3"
-          />
-        )}
-
-        <button
-          onClick={handlePredict}
-          disabled={loading}
-          className="bg-green-600 text-white w-full py-2 rounded hover:bg-green-700 disabled:bg-slate-600"
-        >
-          {loading ? "Scanning..." : "Predict"}
-        </button>
-
-        {!loading && !result && !error && (
-          <p className="text-slate-300 mt-4 text-center">
-            Upload a plant image to identify it.
+    <AppShell>
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-8">
+          <p className="text-green-400 font-semibold mb-2">AI Plant Scanner</p>
+          <h1 className="text-4xl md:text-5xl font-bold">
+            Identify a Plant From a Leaf Image
+          </h1>
+          <p className="text-slate-400 mt-3 max-w-2xl mx-auto">
+            Upload a leaf image and LeafScan will predict the most likely plant
+            class with confidence scores.
           </p>
-        )}
+        </div>
 
-        {loading && (
-          <div className="text-center mt-4 text-white">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto" />
-            <p className="text-sm mt-2">Analyzing leaf...</p>
-          </div>
-        )}
+        <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-8">
+          <section className="bg-slate-900 border border-slate-800 rounded-3xl p-6 h-fit">
+            <h2 className="text-2xl font-bold mb-4">Upload Image</h2>
 
-        {result && (
-          <div className="mt-4 text-white">
-            <p className="text-lg">
-              Top Prediction:{" "}
-              <span
-                className={
-                  result.plant === "Unknown plant"
-                    ? "text-red-400 font-semibold"
-                    : "text-green-400 font-semibold"
-                }
-              >
-                {result.plant}
-              </span>
-            </p>
+            <input
+              type="file"
+              id="imageInput"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
 
-            {detailUrl && (
-              <Link
-                href={detailUrl}
-                className="inline-block mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                View Details
-              </Link>
-            )}
+            <label
+              htmlFor="imageInput"
+              className="block w-full text-center bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl py-3 cursor-pointer font-medium"
+            >
+              Choose Leaf Image
+            </label>
 
-            <div className="w-full bg-gray-200 rounded-full h-4 mt-3">
-              <div
-                className={`h-4 rounded-full ${getBarColor(result.confidence)}`}
-                style={{ width: `${result.confidence}%` }}
-              />
-            </div>
-
-            <p className="text-sm mt-1">
-              {result.plant === "Unknown plant"
-                ? `Best match confidence: ${result.confidence}% (below threshold)`
-                : `Confidence: ${result.confidence}%`}
-            </p>
-
-            <div className="mt-4 text-sm">
-              {top3.length > 0 ? (
-                <>
-                  <strong>Top 3 Predictions:</strong>
-                  <ul className="mt-2 list-disc pl-5">
-                    {top3.map((item, index) => (
-                      <li key={index}>
-                        {item.plant} — {item.confidence}%
-                      </li>
-                    ))}
-                  </ul>
-                </>
+            <div className="mt-5">
+              {previewUrl ? (
+                <img
+                  src={previewUrl}
+                  alt="Preview"
+                  className="w-full h-72 object-contain bg-slate-100 rounded-2xl border border-slate-700"
+                />
               ) : (
-                <strong>No predictions available.</strong>
+                <div className="w-full h-72 rounded-2xl border border-dashed border-slate-700 bg-slate-950 flex items-center justify-center text-slate-500 text-center px-6">
+                  No image selected yet.
+                </div>
               )}
             </div>
-          </div>
-        )}
 
-        {error && <p className="text-red-400 mt-3">{error}</p>}
+            <button
+              onClick={handlePredict}
+              disabled={loading}
+              className="mt-5 w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 disabled:bg-slate-700 disabled:cursor-not-allowed font-semibold"
+            >
+              {loading ? "Scanning..." : "Predict Plant"}
+            </button>
+
+            {previewUrl && (
+              <button
+                onClick={resetScan}
+                disabled={loading}
+                className="mt-3 w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-60 font-medium"
+              >
+                Try Another Image
+              </button>
+            )}
+
+            {error && (
+              <p className="mt-4 text-red-400 text-sm leading-6">{error}</p>
+            )}
+          </section>
+
+          <section className="bg-slate-900 border border-slate-800 rounded-3xl p-6 min-h-[520px]">
+            <h2 className="text-2xl font-bold mb-4">Scan Result</h2>
+
+            {!loading && !result && !error && (
+              <div className="h-[420px] flex items-center justify-center text-center">
+                <div>
+                  <div className="text-6xl mb-4">🌿</div>
+                  <h3 className="text-xl font-bold mb-2">
+                    Waiting for your image
+                  </h3>
+                  <p className="text-slate-400 max-w-md">
+                    After you upload and scan a leaf image, the prediction
+                    result and confidence scores will appear here.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {loading && (
+              <div className="h-[420px] flex items-center justify-center text-center">
+                <div>
+                  <div className="animate-spin rounded-full h-14 w-14 border-b-4 border-green-500 mx-auto mb-5" />
+                  <h3 className="text-xl font-bold">Analyzing image...</h3>
+                  <p className="text-slate-400 mt-2">
+                    The AI model is checking the leaf pattern.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {result && !loading && (
+              <div>
+                <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 mb-6">
+                  <p className="text-slate-400 text-sm mb-2">Top Prediction</p>
+                  <h3
+                    className={`text-2xl font-bold ${
+                      result.plant === "Unknown plant"
+                        ? "text-red-400"
+                        : "text-green-400"
+                    }`}
+                  >
+                    {result.plant}
+                  </h3>
+
+                  <div className="mt-4">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-slate-300">Confidence</span>
+                      <span className="font-semibold">
+                        {result.confidence}%
+                      </span>
+                    </div>
+
+                    <div className="w-full bg-slate-800 rounded-full h-4 overflow-hidden">
+                      <div
+                        className={`h-4 rounded-full ${getBarColor(
+                          result.confidence,
+                        )}`}
+                        style={{ width: `${result.confidence}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    {detailUrl && (
+                      <Link
+                        href={detailUrl}
+                        className="px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 font-medium"
+                      >
+                        View Plant Details
+                      </Link>
+                    )}
+
+                    <Link
+                      href="/plants"
+                      className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 font-medium"
+                    >
+                      Browse Plants
+                    </Link>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-bold mb-4">Top 3 Predictions</h3>
+
+                  {top3.length > 0 ? (
+                    <div className="space-y-4">
+                      {top3.map((item, index) => (
+                        <div
+                          key={index}
+                          className="bg-slate-950 border border-slate-800 rounded-2xl p-4"
+                        >
+                          <div className="flex items-start justify-between gap-4 mb-3">
+                            <div>
+                              <p className="text-sm text-slate-400">
+                                Match #{index + 1}
+                              </p>
+                              <h4 className="font-bold text-lg">
+                                {item.plant}
+                              </h4>
+                            </div>
+
+                            <span className="font-bold text-green-400">
+                              {item.confidence}%
+                            </span>
+                          </div>
+
+                          <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden">
+                            <div
+                              className={`h-3 rounded-full ${getBarColor(
+                                item.confidence,
+                              )}`}
+                              style={{ width: `${item.confidence}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-400">
+                      No prediction list available.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
       </div>
     </AppShell>
   );
