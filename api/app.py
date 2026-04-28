@@ -8,16 +8,18 @@ import json
 app = Flask(__name__)
 CORS(app)
 
+
 @app.route("/")
 def home():
     return {"message": "LeafScan API is running"}
 
+
 # Load model ONCE at startup
-MODEL_PATH = "../models/leaf_scan_model.h5"
+MODEL_PATH = "models/leaf_scan_model.h5"
 model = tf.keras.models.load_model(MODEL_PATH)
 
 # Load class names
-with open("../models/class_names.json") as f:
+with open("models/class_names.json") as f:
     CLASS_NAMES = json.load(f)
 
 
