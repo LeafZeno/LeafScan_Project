@@ -120,7 +120,7 @@ export default function HomePage() {
         </div>
       ) : (
         <>
-          <section className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 min-h-[360px] md:min-h-[460px] mb-10">
+          <section className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 min-h-[5200px] md:min-h-[460px] mb-10">
             {heroPlant.image_url && (
               <img
                 src={heroPlant.image_url}
@@ -134,19 +134,19 @@ export default function HomePage() {
 
             <button
               onClick={prevHero}
-              className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-950/60 hover:bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl"
+              className="absolute z-30 left-3 md:left-5 top-[46%] md:top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-950/70 hover:bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl"
             >
               ‹
             </button>
 
             <button
               onClick={nextHero}
-              className="absolute right-3 md:right-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-950/60 hover:bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl"
+              className="absolute z-30 right-3 md:right-5 top-[46%] md:top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-950/70 hover:bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl"
             >
               ›
             </button>
 
-            <div className="relative z-10 p-6 md:p-12 max-w-2xl min-h-[360px] md:min-h-[460px] flex flex-col justify-end md:justify-center">
+            <div className="relative z-10 p-6 md:p-12 max-w-2xl min-h-[520px] md:min-h-[460px] flex flex-col justify-end md:justify-center">
               <p className="text-green-400 font-semibold mb-2">
                 Featured Plant
               </p>
@@ -163,7 +163,7 @@ export default function HomePage() {
                 {truncateText(heroPlant.description, 180)}
               </p>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 pb-8 md:pb-0">
                 <Link
                   href={`/plant/${heroPlant.id}`}
                   className="px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 font-semibold"
@@ -187,7 +187,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
+            <div className="absolute z-30 bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
               {plants.slice(0, 5).map((plant, index) => (
                 <button
                   key={plant.id}

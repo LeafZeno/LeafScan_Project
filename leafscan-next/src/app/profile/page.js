@@ -7,12 +7,14 @@ import { supabase } from "@/lib/supabase";
 import { getCurrentUser, signOutUser } from "@/lib/auth";
 import Navbar from "@/components/Navbar";
 import AppShell from "@/components/AppShell";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState(null);
   const [authUser, setAuthUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     async function loadProfile() {
