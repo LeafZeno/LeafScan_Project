@@ -146,7 +146,7 @@ export default function HomePage() {
           </div>
         </div>
         {/* MOBILE */}
-        [4/29/2026 10:34 PM] Rathanak Colindo:{" "}
+
         <div className="md:hidden absolute inset-0 z-10 flex flex-col justify-end items-center text-center pb-16">
           <p className="text-green-400 text-sm">
             {heroPlant.categories?.name || "Unknown"}
