@@ -5,6 +5,11 @@ import Link from "next/link";
 import AppShell from "@/components/AppShell";
 import { supabase } from "@/lib/supabase";
 
+function truncateText(text, limit = 120) {
+  if (!text) return "no description available.";
+  return text.length > limit ? text.slice(0, limit) + "..." : text;
+}
+
 function PlantCard({ plant }) {
   return (
     <Link
@@ -38,8 +43,8 @@ function PlantCard({ plant }) {
           {plant.scientific_name || ""}
         </p>
 
-        <p className="hidden md:block text-slate-300 text-sm mt-3 line-clamp-2">
-          {plant.description || "No description available."}
+        <p className="hidden md:block text-slate-300 text-sm mt-3">
+          {truncateText(plant.description, 120)}
         </p>
       </div>
     </Link>
