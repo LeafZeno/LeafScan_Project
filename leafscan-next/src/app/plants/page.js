@@ -38,13 +38,9 @@ function PlantCard({ plant }) {
           {plant.scientific_name || ""}
         </p>
 
-        <p className="hidden md:block text-slate-300 text-sm mt-3 line-clamp-3">
+        <p className="hidden md:block text-slate-300 text-sm mt-3 line-clamp-2">
           {plant.description || "No description available."}
         </p>
-
-        <div className="mt-4 text-green-400 font-semibold text-sm">
-          View details →
-        </div>
       </div>
     </Link>
   );
