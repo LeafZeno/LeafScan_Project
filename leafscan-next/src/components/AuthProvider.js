@@ -10,12 +10,12 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  async function loadProfile(userId) {
-    const { data, error } = await supabase
+  async function loadProfile(user) {
+    const { data: existingProfile, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.log("Profile load error:", error);
@@ -23,7 +23,35 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    setProfile(data);
+    if (existingProfile) {
+      setProfile(existingProfile);
+      return;
+    }
+
+    const fullName =
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      user.email?.split("@")[0] ||
+      "User";
+
+    const { data: newProfile, error: insertError } = await supabase
+      .from("profiles")
+      .insert({
+        id: user.id,
+        email: user.email,
+        full_name: fullName,
+        role: "user",
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.log("Profile create error:", insertError);
+      setProfile(null);
+      return;
+    }
+
+    setProfile(newProfile);
   }
 
   async function refreshAuth() {
@@ -35,7 +63,7 @@ export function AuthProvider({ children }) {
     setUser(currentUser);
 
     if (currentUser) {
-      await loadProfile(currentUser.id);
+      await loadProfile(currentUser);
     } else {
       setProfile(null);
     }
@@ -51,7 +79,7 @@ export function AuthProvider({ children }) {
         setUser(currentUser);
 
         if (currentUser) {
-          await loadProfile(currentUser.id);
+          await loadProfile(currentUser);
         } else {
           setProfile(null);
         }
