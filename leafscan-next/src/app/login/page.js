@@ -8,11 +8,12 @@ import { useAuth } from "@/components/AuthProvider";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { refreshAuth } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const { refreshAuth } = useAuth();
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -25,14 +26,14 @@ export default function LoginPage() {
     });
 
     if (error) {
-      console.log(error);
       setMessage(error.message);
       setLoading(false);
       return;
     }
 
-    setMessage("Login successful.");
     await refreshAuth();
+
+    setMessage("Login successful.");
     setLoading(false);
 
     setTimeout(() => {
@@ -40,11 +41,37 @@ export default function LoginPage() {
     }, 500);
   }
 
+  async function handleGoogleLogin() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+
+    if (error) {
+      setMessage(error.message);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8">
         <h1 className="text-3xl font-bold mb-2 text-green-400">Login</h1>
         <p className="text-slate-400 mb-6">Sign in to your LeafScan account</p>
+
+        <button
+          onClick={handleGoogleLogin}
+          className="w-full py-3 rounded-xl bg-white text-black font-semibold hover:bg-gray-200 transition mb-5"
+        >
+          Continue with Google
+        </button>
+
+        <div className="flex items-center gap-3 mb-5">
+          <div className="h-px bg-slate-700 flex-1" />
+          <span className="text-slate-500 text-sm">or</span>
+          <div className="h-px bg-slate-700 flex-1" />
+        </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
@@ -79,12 +106,6 @@ export default function LoginPage() {
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
-
-        <button onclick={handleGoogleLogin}
-        className="w-full py-3 rounded-x1 bg-white font-semibold hover:bg-gray-200 transition mt-3"
-        >
-          Continue with Google
-        </button>
 
         {message && (
           <p
