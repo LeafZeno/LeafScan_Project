@@ -15,7 +15,7 @@ function PlantCard({ plant }) {
         <img
           src={plant.image_url}
           alt={plant.name || "Plant"}
-          className="w-full h-48 md:h-56 object-cover bg-slate-800 group-hover:scale-105 transition duration-500"
+          className="w-full h-32 md:h-56 object-cover bg-slate-800 group-hover:scale-105 transition duration-500"
         />
       ) : (
         <div className="w-full h-48 md:h-56 bg-slate-800 flex items-center justify-center text-slate-500">
@@ -23,14 +23,14 @@ function PlantCard({ plant }) {
         </div>
       )}
 
-      <div className="p-4">
+      <div className="p-3 md:p-4">
         <div className="flex items-center justify-between gap-3 mb-2">
           <span className="text-xs px-3 py-1 rounded-full bg-green-500/10 text-green-300 border border-green-500/20">
             {plant.categories?.name || "Uncategorized"}
           </span>
         </div>
 
-        <h2 className="text-xl font-bold line-clamp-2">
+        <h2 className="text-base md:text-xl font-bold line-clamp-2">
           {plant.name || "Unnamed plant"}
         </h2>
 
@@ -38,7 +38,7 @@ function PlantCard({ plant }) {
           {plant.scientific_name || ""}
         </p>
 
-        <p className="text-slate-300 text-sm mt-3 line-clamp-3">
+        <p className="hidden md:block text-slate-300 text-sm mt-3 line-clamp-3">
           {plant.description || "No description available."}
         </p>
 
@@ -157,7 +157,7 @@ export default function PlantsPage() {
       </section>
 
       {loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
           {[1, 2, 3, 4].map((item) => (
             <div
               key={item}
@@ -203,7 +203,7 @@ export default function PlantsPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             {filteredPlants.map((plant) => (
               <PlantCard key={plant.id} plant={plant} />
             ))}
