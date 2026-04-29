@@ -80,6 +80,12 @@ export default function LoginPage() {
           </button>
         </form>
 
+        <button onclick={handleGoogleLogin}
+        className="w-full py-3 rounded-x1 bg-white font-semibold hover:bg-gray-200 transition mt-3"
+        >
+          Continue with Google
+        </button>
+
         {message && (
           <p
             className={`mt-4 text-sm ${
