@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Heart, FileSearch } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { supabase } from "@/lib/supabase";
 
@@ -53,7 +53,12 @@ export default function HomePage() {
     async function load() {
       const { data } = await supabase
         .from("plants")
-        .select("*")
+        .select(
+          `
+          *,
+          categories (name)
+          `,
+        )
         .eq("is_active", true);
 
       setPlants(data || []);
@@ -101,7 +106,7 @@ export default function HomePage() {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         className="relative rounded-3xl overflow-hidden border border-slate-800 
-                   h-[520px] md:h-[480px] mb-10"
+                   h-[52vh] min-h-[360px] max-h-[520px] md:h-[480px] mb-10"
       >
         {/* BG */}
         <img
@@ -115,7 +120,7 @@ export default function HomePage() {
         <div className="hidden md:flex relative z-10 h-full flex-col justify-end p-10">
           <div className="max-w-2xl space-y-3">
             <p className="text-green-400 text-sm">
-              {heroPlant.category || "Plant"}
+              {heroPlant.categories?.name || "Unknown"}
             </p>
 
             <h1 className="text-5xl font-bold line-clamp-2">
@@ -144,7 +149,7 @@ export default function HomePage() {
         [4/29/2026 10:34 PM] Rathanak Colindo:{" "}
         <div className="md:hidden absolute inset-0 z-10 flex flex-col justify-end items-center text-center pb-16">
           <p className="text-green-400 text-sm">
-            {heroPlant.category || "Plant"}
+            {heroPlant.categories?.name || "Unknown"}
           </p>
 
           <h1 className="text-2xl font-bold line-clamp-2 px-4">
@@ -155,8 +160,9 @@ export default function HomePage() {
             <Link
               href={`/plant/${heroPlant.id}`}
               className="bg-green-600 p-3 rounded-xl"
+              aria-label="View plant details"
             >
-              ▶
+              <FileSearch size={22} />
             </Link>
 
             <button className="bg-slate-800 p-3 rounded-xl">
