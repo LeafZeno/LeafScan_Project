@@ -28,10 +28,10 @@ function PlantCard({ plant }) {
       )}
 
       <div className="p-3">
-        <h3 className="font-bold text-white leading-tight">
+        <h3 className="font-bold text-white leading-tight line-clamp-2">
           {plant.name || "Unnamed plant"}
         </h3>
-        <p className="text-sm text-slate-400 italic mt-1">
+        <p className="text-sm text-slate-400 italic mt-1 line-clamp-1">
           {plant.scientific_name || ""}
         </p>
       </div>
@@ -120,7 +120,7 @@ export default function HomePage() {
         </div>
       ) : (
         <>
-          <section className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 min-h-[5200px] md:min-h-[460px] mb-10">
+          <section className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 h-[520px] md:h-[460px] mb-10">
             {heroPlant.image_url && (
               <img
                 src={heroPlant.image_url}
@@ -129,58 +129,60 @@ export default function HomePage() {
               />
             )}
 
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/75 to-slate-950/15" />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-slate-950/20" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-transparent to-transparent" />
 
             <button
               onClick={prevHero}
-              className="absolute z-30 left-3 md:left-5 top-[46%] md:top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-950/70 hover:bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl"
+              className="absolute z-30 left-3 md:left-5 top-[46%] md:top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-950/75 hover:bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl"
+              aria-label="Previous featured plant"
             >
               ‹
             </button>
 
             <button
               onClick={nextHero}
-              className="absolute z-30 right-3 md:right-5 top-[46%] md:top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-950/70 hover:bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl"
+              className="absolute z-30 right-3 md:right-5 top-[46%] md:top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-950/75 hover:bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl"
+              aria-label="Next featured plant"
             >
               ›
             </button>
 
-            <div className="relative z-10 p-6 md:p-12 max-w-2xl min-h-[520px] md:min-h-[460px] flex flex-col justify-end md:justify-center">
+            <div className="relative z-10 h-full p-6 md:p-12 max-w-2xl flex flex-col justify-end md:justify-center">
               <p className="text-green-400 font-semibold mb-2">
                 Featured Plant
               </p>
 
-              <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-3">
+              <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-3 line-clamp-2 max-w-[90%]">
                 {heroPlant.name}
               </h1>
 
-              <p className="text-slate-300 italic mb-4">
+              <p className="text-slate-300 italic mb-4 line-clamp-1">
                 {heroPlant.scientific_name || ""}
               </p>
 
-              <p className="text-slate-100 leading-7 mb-6 max-w-xl">
+              <p className="text-slate-100 leading-7 mb-6 max-w-xl line-clamp-4 md:line-clamp-3">
                 {truncateText(heroPlant.description, 180)}
               </p>
 
-              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 pb-8 md:pb-0">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 pb-10 md:pb-0">
                 <Link
                   href={`/plant/${heroPlant.id}`}
-                  className="px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 font-semibold"
+                  className="px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 font-semibold text-center"
                 >
                   View Details
                 </Link>
 
                 <Link
                   href="/scan"
-                  className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 font-semibold"
+                  className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 font-semibold text-center"
                 >
                   Scan Plant
                 </Link>
 
                 <Link
                   href="/plants"
-                  className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 font-semibold"
+                  className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 font-semibold text-center"
                 >
                   Browse Plants
                 </Link>
@@ -195,6 +197,7 @@ export default function HomePage() {
                   className={`w-2.5 h-2.5 rounded-full ${
                     index === heroIndex ? "bg-white" : "bg-white/40"
                   }`}
+                  aria-label={`Go to featured plant ${index + 1}`}
                 />
               ))}
             </div>
