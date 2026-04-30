@@ -9,7 +9,7 @@ import { useAuth } from "@/components/AuthProvider";
 export default function AuthButtons() {
   const router = useRouter();
   const { showToast } = useToast();
-  const { user, refreshAuth } = useAuth();
+  const { user, loading, refreshAuth } = useAuth();
 
   async function handleLogout() {
     const ok = await signOutUser();
@@ -20,6 +20,14 @@ export default function AuthButtons() {
       router.push("/");
       router.refresh();
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="px-4 py-3 rounded-md font-semibold text-slate-400">
+        ...
+      </div>
+    )
   }
 
   if (user) {

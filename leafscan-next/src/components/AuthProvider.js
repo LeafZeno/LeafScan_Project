@@ -72,19 +72,32 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
+    async function getSession() {
+      setLoading(true);
+
+      const { data } = await supabase.auth.getSession();
+
+      if (data.session?.user) {
+        setUser(data.session.user);
+        await loadProfile(data.session.user);
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
+      setLoading(false);
+    }
+
+    getSession();
+
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        const currentUser = session?.user || null;
-
-        setUser(currentUser);
-
-        if (currentUser) {
-          await loadProfile(currentUser);
+        if (session?.user) {
+          setUser(session.user);
+          await loadProfile(session.user);
         } else {
+          setUser(null);
           setProfile(null);
         }
-
-        setLoading(false);
       },
     );
 
