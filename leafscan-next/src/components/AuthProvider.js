@@ -10,35 +10,40 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  async function loadProfile(user) {
+  async function loadProfile(currentUser) {
+    if (!currentUser) {
+      setProfile(null);
+      return null;
+    }
+
     const { data: existingProfile, error } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", userId)
+      .eq("id", currentUser.id)
       .maybeSingle();
 
     if (error) {
       console.log("Profile load error:", error);
       setProfile(null);
-      return;
+      return null;
     }
 
     if (existingProfile) {
       setProfile(existingProfile);
-      return;
+      return existingProfile;
     }
 
     const fullName =
-      user.user_metadata?.full_name ||
-      user.user_metadata?.name ||
-      user.email?.split("@")[0] ||
+      currentUser.user_metadata?.full_name ||
+      currentUser.user_metadata?.name ||
+      currentUser.email?.split("@")[0] ||
       "User";
 
     const { data: newProfile, error: insertError } = await supabase
       .from("profiles")
       .insert({
-        id: user.id,
-        email: user.email,
+        id: currentUser.id,
+        email: currentUser.email,
         full_name: fullName,
         role: "user",
       })
@@ -48,17 +53,18 @@ export function AuthProvider({ children }) {
     if (insertError) {
       console.log("Profile create error:", insertError);
       setProfile(null);
-      return;
+      return null;
     }
 
     setProfile(newProfile);
+    return newProfile;
   }
 
   async function refreshAuth() {
     setLoading(true);
 
-    const { data } = await supabase.auth.getUser();
-    const currentUser = data?.user || null;
+    const { data } = await supabase.auth.getSession();
+    const currentUser = data.session?.user || null;
 
     setUser(currentUser);
 
@@ -72,36 +78,46 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    async function getSession() {
+    let active = true;
+
+    async function initAuth() {
       setLoading(true);
 
       const { data } = await supabase.auth.getSession();
+      const currentUser = data.session?.user || null;
 
-      if (data.session?.user) {
-        setUser(data.session.user);
-        await loadProfile(data.session.user);
+      if (!active) return;
+
+      setUser(currentUser);
+
+      if (currentUser) {
+        await loadProfile(currentUser);
       } else {
-        setUser(null);
         setProfile(null);
       }
-      setLoading(false);
+
+      if (active) setLoading(false);
     }
 
-    getSession();
+    initAuth();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          await loadProfile(session.user);
+        const currentUser = session?.user || null;
+
+        setUser(currentUser);
+        setLoading(false);
+
+        if (currentUser) {
+          loadProfile(currentUser);
         } else {
-          setUser(null);
           setProfile(null);
         }
       },
     );
 
     return () => {
+      active = false;
       listener.subscription.unsubscribe();
     };
   }, []);
