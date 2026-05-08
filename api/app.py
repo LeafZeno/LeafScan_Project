@@ -36,8 +36,8 @@ def predict():
         return jsonify({"error": "Invalid image"}), 400
 
     img = cv2.resize(img, (224, 224))
-    img = img / 255.0
-    img = np.expand_dims(img, axis=0)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = np.expand_dims(img, axis=0).astype(float32)
 
     preds = model.predict(img)[0]
 
