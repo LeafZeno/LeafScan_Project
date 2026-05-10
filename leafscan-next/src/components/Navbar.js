@@ -62,7 +62,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="ml-auto hidden lg:flex items-center gap-2">
+          <div className="ml-auto hidden xl:flex items-center gap-1 whitespace-nowrap">
             {isAdmin && <NavLink href="/admin" label="Admin" icon="🛠️" />}
 
             {navItems.map((item) => (
@@ -85,7 +85,7 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Buttons */}
-          <div className="ml-auto flex lg:hidden items-center gap-2">
+          <div className="ml-auto flex xl:hidden items-center gap-2">
             <button
               onClick={() => setSearchOpen(true)}
               className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100"
@@ -106,7 +106,7 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {mobileOpen && (
-          <div className="lg:hidden border-t border-slate-800 bg-[#202020] px-4 pb-4">
+          <div className="xl:hidden border-t border-slate-800 bg-[#202020] px-4 pb-4">
             <nav className="grid grid-cols-1 gap-2 pt-4">
               {isAdmin && (
                 <NavLink
