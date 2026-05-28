@@ -29,21 +29,21 @@ function SectionRow({ title, plants }) {
 
   const scrollLeft = () => {
     scrollRef.current?.scrollBy({
-      left: -320,
+      left: -900,
       behavior: "smooth",
     });
   };
 
   const scrollRight = () => {
     scrollRef.current?.scrollBy({
-      left: 320,
+      left: 900,
       behavior: "smooth",
     });
   };
 
   return (
     <section className="mb-10 relative">
-      <div className="flex justify-between mb-4">
+      <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">{title}</h2>
 
         <Link href="/plants" className="text-green-400 text-sm">
@@ -51,34 +51,29 @@ function SectionRow({ title, plants }) {
         </Link>
       </div>
 
-      {/* Left button */}
+      {/* Left Arrow */}
       <button
         onClick={scrollLeft}
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-10
-        bg-black/70 hover:bg-black text-white w-10 h-10
-        rounded-full flex items-center justify-center"
+        className="absolute left-[-10px] top-[55%] -translate-y-1/2 z-20
+        w-12 h-12 rounded-full bg-slate-900/90 border border-slate-700
+        hover:bg-slate-800 flex items-center justify-center shadow-lg"
       >
         ‹
       </button>
 
-      {/* Cards */}
-      <div
-        ref={scrollRef}
-        className="flex gap-4 overflow-hidden scroll-smooth px-12"
-      >
+      {/* Cards Row */}
+      <div ref={scrollRef} className="flex gap-4 overflow-hidden scroll-smooth">
         {plants.slice(0, 8).map((p) => (
-          <div key={p.id} className="flex-shrink-0 w-[260px]">
-            <PlantCard plant={p} />
-          </div>
+          <PlantCard key={p.id} plant={p} />
         ))}
       </div>
 
-      {/* Right button */}
+      {/* Right Arrow */}
       <button
         onClick={scrollRight}
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-10
-        bg-black/70 hover:bg-black text-white w-10 h-10
-        rounded-full flex items-center justify-center"
+        className="absolute right-[-10px] top-[55%] -translate-y-1/2 z-20
+        w-12 h-12 rounded-full bg-slate-900/90 border border-slate-700
+        hover:bg-slate-800 flex items-center justify-center shadow-lg"
       >
         ›
       </button>
