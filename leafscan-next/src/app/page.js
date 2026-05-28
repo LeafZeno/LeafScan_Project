@@ -25,22 +25,63 @@ function PlantCard({ plant }) {
 }
 
 function SectionRow({ title, plants }) {
+  const scrollRef = useRef(null);
+
+  const scrollLeft = () => {
+    scrollRef.current?.scrollBy({
+      left: -320,
+      behavior: "smooth",
+    });
+  };
+
+  const scrollRight = () => {
+    scrollRef.current?.scrollBy({
+      left: 320,
+      behavior: "smooth",
+    });
+  };
+
   return (
-    <section className="mb-10">
+    <section className="mb-10 relative">
       <div className="flex justify-between mb-4">
         <h2 className="text-2xl font-bold">{title}</h2>
+
         <Link href="/plants" className="text-green-400 text-sm">
           See all
         </Link>
       </div>
 
-      <div className="flex gap-4 overflow-x-scroll scrollbar-hide pb-2 snap-x snap-mandatory cursor-grab active:cursor-grabbing">
+      {/* Left button */}
+      <button
+        onClick={scrollLeft}
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-10
+        bg-black/70 hover:bg-black text-white w-10 h-10
+        rounded-full flex items-center justify-center"
+      >
+        ‹
+      </button>
+
+      {/* Cards */}
+      <div
+        ref={scrollRef}
+        className="flex gap-4 overflow-hidden scroll-smooth px-12"
+      >
         {plants.slice(0, 8).map((p) => (
-          <div key={p.id} className="flex-shrink-0 w-[260px] snap-start">
+          <div key={p.id} className="flex-shrink-0 w-[260px]">
             <PlantCard plant={p} />
           </div>
         ))}
       </div>
+
+      {/* Right button */}
+      <button
+        onClick={scrollRight}
+        className="absolute right-0 top-1/2 -translate-y-1/2 z-10
+        bg-black/70 hover:bg-black text-white w-10 h-10
+        rounded-full flex items-center justify-center"
+      >
+        ›
+      </button>
     </section>
   );
 }
