@@ -124,7 +124,8 @@ function PlantFormModal({
                   </option>
                 ))}
               </select>
-            </div></div>
+            </div>
+          </div>
 
           <div>
             <label className="block text-sm text-slate-300 mb-2">
@@ -241,12 +242,13 @@ function PlantFormModal({
               {saving
                 ? "Saving..."
                 : mode === "edit"
-                ? "Update Plant"
-                : "Add Plant"}
+                  ? "Update Plant"
+                  : "Add Plant"}
             </button>
 
             <button
-              type="button"onClick={onClose}
+              type="button"
+              onClick={onClose}
               className="flex-1 bg-slate-800 hover:bg-slate-700 px-5 py-3 rounded-xl font-semibold"
             >
               Cancel
@@ -301,7 +303,7 @@ export default function AdminPlantsPage() {
             id,
             name
           )
-        `
+        `,
         )
         .order("id", { ascending: false }),
       supabase.from("categories").select("*").order("id", { ascending: true }),
@@ -316,7 +318,7 @@ export default function AdminPlantsPage() {
     async function init() {
       await loadData();
     }
-    
+
     init();
   }, []);
 
@@ -405,7 +407,8 @@ export default function AdminPlantsPage() {
       } else {
         const { data, error } = await supabase
           .from("plants")
-          .insert(payload).select("id")
+          .insert(payload)
+          .select("id")
           .single();
 
         if (error) throw error;
@@ -531,7 +534,8 @@ export default function AdminPlantsPage() {
 
                       <td className="p-4">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold ${plant.is_active
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            plant.is_active
                               ? "bg-green-500/15 text-green-300"
                               : "bg-red-500/15 text-red-300"
                           }`}

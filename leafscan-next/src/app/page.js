@@ -34,9 +34,11 @@ function SectionRow({ title, plants }) {
         </Link>
       </div>
 
-      <div className="flex md:grid md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-x-auto">
-        {plants.map((p) => (
-          <PlantCard key={p.id} plant={p} />
+      <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
+        {plants.slice(0, 8).map((p) => (
+          <div key={p.id} className="flex-shrink-0 w-[260px]">
+            <PlantCard plant={p} />
+          </div>
         ))}
       </div>
     </section>

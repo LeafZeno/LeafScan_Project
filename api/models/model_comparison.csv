@@ -1,4 +1,4 @@
-Model,Validation Accuracy,Validation Loss,Training Time (min),Total Parameters,Epochs,Fine Tune Epochs,Batch Size,Patience,Learning Rate,Fine Tune LR,Dropout
-EfficientNetB0,78.19,0.7779,90.58,4099526,8,3,32,3,0.001,1e-05,0.3
-MobileNetV3Small,67.91,1.0911,47.13,961619,8,3,32,3,0.001,1e-05,0.3
-DenseNet121,78.94,0.7268,174.42,7077475,8,3,32,3,0.001,1e-05,0.3
+Model,Accuracy,Precision,Recall,F1-Score,Test Loss,Training Time (min),Total Parameters,Epochs,Fine Tune Epochs,Batch Size,Patience,Learning Rate,Fine Tune LR,Dropout
+EfficientNetB0,77.53,78.84,77.53,77.31,0.8283,72.64,4099526,8,3,32,3,0.001,1e-05,0.3
+MobileNetV3Small,69.29,71.12,69.29,68.93,1.0637,44.82,961619,8,3,32,3,0.001,1e-05,0.3
+DenseNet121,79.06,80.11,79.06,78.96,0.7123,146.79,7077475,8,3,32,3,0.001,1e-05,0.3
