@@ -104,15 +104,15 @@ export default function HomePage() {
 
     load();
   }, []);
-
+  const heroPlants = useMemo(() => plants.slice(0, 5), [plants]);
   const heroPlant = plants[heroIndex];
 
   function nextHero() {
-    setHeroIndex((prev) => (prev + 1) % plants.length);
+    setHeroIndex((prev) => (prev + 1) % heroPlants.length);
   }
 
   function prevHero() {
-    setHeroIndex((prev) => (prev - 1 + plants.length) % plants.length);
+    setHeroIndex((prev) => (prev - 1 + heroPlants.length) % heroPlants.length);
   }
 
   function handleTouchStart(e) {
@@ -218,7 +218,7 @@ export default function HomePage() {
           </button>
 
           <span>
-            {heroIndex + 1} / {plants.length}
+            {heroIndex + 1} / {heroPlants.length}
           </span>
 
           <button
