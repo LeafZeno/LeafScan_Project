@@ -199,8 +199,15 @@ export default function HomePage() {
                 View Details
               </Link>
 
-              <button className="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center">
-                <Heart />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  toggleFavorite(heroPlant.id);
+                }}
+                className="bg-slate-800/90 hover:bg-slate-700 rounded-xl p-4 transition"
+              >
+                <Heart className="w-6 h-6 text-white" />
               </button>
             </div>
           </div>
