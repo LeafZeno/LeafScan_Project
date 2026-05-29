@@ -84,22 +84,45 @@ function SectionRow({ title, plants }) {
 export default function HomePage() {
   const [plants, setPlants] = useState([]);
   const [heroIndex, setHeroIndex] = useState(0);
+  const [popularPlants, setPopularPlants] = useState([]);
 
   const touchStartX = useRef(0);
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
+      // Load all plants
+      const { data: plantData } = await supabase
         .from("plants")
         .select(
           `
-          *,
-          categories (name)
-          `,
+      *,
+      categories(name)
+      `,
         )
         .eq("is_active", true);
 
-      setPlants(data || []);
+      setPlants(plantData || []);
+
+      // Load favorites count
+      const { data: favoriteData } = await supabase
+        .from("favorites")
+        .select("plant_id");
+
+      if (plantData && favoriteData) {
+        const favoriteCount = {};
+
+        favoriteData.forEach((fav) => {
+          favoriteCount[fav.plant_id] = (favoriteCount[fav.plant_id] || 0) + 1;
+        });
+
+        const sortedPlants = [...plantData]
+          .sort(
+            (a, b) => (favoriteCount[b.id] || 0) - (favoriteCount[a.id] || 0),
+          )
+          .slice(0, 8);
+
+        setPopularPlants(sortedPlants);
+      }
     }
 
     load();
@@ -125,8 +148,7 @@ export default function HomePage() {
     if (touchStartX.current - end > 50) nextHero();
     if (end - touchStartX.current > 50) prevHero();
   }
-
-  const popular = useMemo(() => plants.slice(0, 8), [plants]);
+  const popular = popularPlants;
   const latest = useMemo(() => plants.slice(-8).reverse(), [plants]);
 
   if (!heroPlant) {
